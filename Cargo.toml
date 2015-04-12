@@ -1,0 +1,20 @@
+[package]
+
+name = "Kappahack"
+version = "0.0.1"
+authors = ["wittek"]
+build = "build.rs"
+
+[lib]
+name = "keepo"
+crate_type = ["dylib"]
+
+[dependencies]
+lazy_static = "*"
+winapi = "*"
+user32-sys = "*"
+kernel32-sys = "*"
+crc = "*"
+
+[build-dependencies]
+gcc = "*"
