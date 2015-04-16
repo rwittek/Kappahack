@@ -109,6 +109,9 @@ impl Vector {
     pub fn zero() -> Vector {
         Vector { x: 0., y: 0., z: 0. }
     }
+    pub fn normalize(self) -> Vector {
+        self.scale(1.0 / self.length()) 
+    }
     pub fn to_aligned(self) -> VectorAligned {
         VectorAligned {
             x: self.x,
@@ -132,22 +135,38 @@ impl Vector {
     pub fn to_angle(self) -> QAngle {
         use std::num::{Float};
         if self.x == 0.0 && self.y == 0.0 {
-            QAngle { pitch: 0.0, yaw: 0.0, roll: 0.0 }
+            let pitch = if self.z > 0.0 {
+                270.0
+            } else {
+                90.0
+            };
+            QAngle { pitch: pitch, yaw: 0.0, roll: 0.0 }
         }
         else
         {
 		    let mut yaw = self.y.atan2(self.x).to_degrees();
 
-            if yaw > 180.0 {
-                yaw -= 360.0;
+            if yaw < 0.0 {
+                yaw += 360.0;
             }
 
-		    let tmp = self.x * self.x + self.y * self.y;
+		    let tmp = (self.x * self.x + self.y * self.y).sqrt();
 
-	        let pitch = self.z.atan2(tmp).to_degrees();
+	        let mut pitch = (-self.z).atan2(tmp).to_degrees();
+            if pitch < 0.0 {
+                pitch += 360.0;
+            }
             QAngle { pitch: pitch, yaw: yaw, roll: 0.0 }
         }
 	}
+
+    pub fn length(&self) -> f32 {
+        self.length_sqr().sqrt()
+    }
+
+    pub fn dot(&self, other: &Vector) -> f32 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
 
 }
 impl Add<Vector> for Vector {

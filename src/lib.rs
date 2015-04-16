@@ -1,5 +1,5 @@
 #![crate_type="dylib"]
-#![feature(asm, libc, std_misc, collections)]
+#![feature(asm, libc, std_misc, collections, core)]
 #![allow(raw_pointer_derive)]
 
 extern crate crc;
@@ -9,6 +9,7 @@ extern crate libc;
 extern crate winapi;
 extern crate kernel32;
 extern crate user32;
+extern crate rand;
 
 pub use interfaces::INTERFACES;
 pub use offsets::OFFSETS;

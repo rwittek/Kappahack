@@ -5,6 +5,7 @@ use sdk::Vector;
 use std::mem;
 use libc;
 use offsets::ptr_offset;
+use rand;
 use vmthook;
 
 pub unsafe fn install_client() {
@@ -33,10 +34,23 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                                       input_sample_frametime: libc::c_float,
                                       active: bool)
 {
+    let mut ebp: usize = 0;
+    asm!("movl %ebp, $0"
+         : "=r"(ebp)
+         :
+         :
+         );
+    let ebp = ebp as *mut *mut (); 
     mem::transmute::<_, CreateMoveFn>(REAL_CREATEMOVE)(sequence_number,
                     input_sample_frametime,
                     active);
 
+    let sendpacket_ptr = ptr_offset::<_, bool>(*ebp, -1);
+    static mut COUNTER: u32 = 0;
+    COUNTER = (COUNTER + 1) % 10;
+    if COUNTER > 0 {
+        *sendpacket_ptr = false;
+    }
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
     let cmd = cmds.offset((sequence_number % 90) as isize);
 
@@ -45,6 +59,9 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let meorigin = *sdk::CBaseEntity_GetAbsOrigin(me);
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
+
+    let angles = (*cmd).viewangles; 
+    let angvec = angles.to_vector();
 
     for ent in (1..32) 
         .filter(|&idx| idx != me_idx)
@@ -61,14 +78,54 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                 } else {
                     [255, 50, 50]
                 };
-
-                sdk::DebugOverlay_AddLineOverlay(INTERFACES.debugoverlay, origin, &(*origin + Vector { x: 0.0, y: 0.0, z: 64.0 }), color[0], color[1], color[2], true, 0.1);
+                if !friendly {
+                    sdk::DebugOverlay_AddLineOverlay(INTERFACES.debugoverlay, origin, &(*origin + Vector { x: 0.0, y: 0.0, z: 64.0 }), color[0], color[1], color[2], true, 0.08);
+                }
             }
-
-    let angles = (*cmd).viewangles; 
-    if !::triggerbot::should_trigger(me, eyes, angles) {
-        (*cmd).buttons &= !1;
+    /*if ::triggerbot::should_trigger(me, eyes, angles) {
+        (*cmd).buttons |= 1;
+    }*/
+    let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
+    if flags & 1 == 0 {
+        (*cmd).buttons &= !(2);
     }
+
+    static mut FLIP: bool = false;
+    FLIP = !FLIP;
+    static mut ANG_ACCUM: f32 = 0.0;
+    if (*cmd).buttons & 1 == 0 {
+        use std::f32::consts::PI;
+        ANG_ACCUM = (ANG_ACCUM + (0.34 * PI)) % (PI * 2.0);
+        let angdelta = ANG_ACCUM - (*cmd).viewangles.yaw.to_radians(); 
+
+        (*cmd).viewangles.yaw = ANG_ACCUM.to_degrees(); 
+        (*cmd).viewangles.pitch = if FLIP {
+            89.0
+        } else {
+            -89.0
+        };
+
+        let (fm, sm) = ((*cmd).forwardmove, (*cmd).sidemove);
+        
+        (*cmd).forwardmove = fm * angdelta.cos() - sm * angdelta.sin();
+        (*cmd).sidemove = fm * angdelta.sin() + sm * angdelta.cos();
+    }
+    if (*cmd).viewangles.pitch > 90.0 {
+        (*cmd).viewangles.pitch = 90.0;
+    }
+    if (*cmd).viewangles.pitch < -90.0 {
+        (*cmd).viewangles.pitch = -90.0;
+    }
+    if (*cmd).viewangles.yaw < 0.0 {
+        (*cmd).viewangles.yaw += 360.0;
+    }
+    if (*cmd).viewangles.yaw > 360.0 {
+        (*cmd).viewangles.yaw -= 360.0;
+    }
+         
+
+    //(*cmd).command_number = 2076615043;
+    //(*cmd).random_seed = 39;
     let verified_cmds = *((INTERFACES.input as usize + 0xC8) as *const *mut sdk::CVerifiedUserCmd);
     let verified_cmd = verified_cmds.offset((sequence_number % 90) as isize);
     (*verified_cmd).m_cmd = *cmd;
