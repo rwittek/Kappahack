@@ -1,5 +1,5 @@
 #![crate_type="dylib"]
-#![feature(asm, libc, std_misc, collections, core)]
+#![feature(asm, libc, std_misc, collections)]
 #![allow(raw_pointer_derive)]
 
 extern crate crc;
