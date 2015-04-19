@@ -541,6 +541,11 @@ class CBaseEntity {};
 		typedef Vector& ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>(_this, 10)(_this);
 	}
+	extern "C" void CBaseEntity_UpdateGlowEffect( CBaseEntity *_this )
+	{
+		typedef void ( __thiscall* OriginalFn )( PVOID );
+		return getvfunc<OriginalFn>(_this, 0x384 / 4)(_this);
+	}
 /*
 	void GetWorldSpaceCenter( Vector& vWorldSpaceCenter)
 	{

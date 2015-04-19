@@ -29,6 +29,7 @@ extern "C" {
     pub fn CBaseEntity_GetAbsOrigin(_this: *mut CBaseEntity) -> &Vector;
     pub fn CBaseEntity_GetAbsAngles(_this: *mut CBaseEntity) -> &QAngle;
     pub fn CBaseEntity_GetRenderBounds(_this: *mut CBaseEntity, mins: &mut Vector, maxes: &mut Vector);
+    pub fn CBaseEntity_UpdateGlowEffect(_this: *mut CBaseEntity);
 
     pub fn CBaseEntity_GetIndex(_this: *mut CBaseEntity) -> libc::c_int;
     pub fn CBaseEntity_GetRefEHandle(_this: *mut CBaseEntity) -> &libc::c_int;

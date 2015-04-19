@@ -27,6 +27,6 @@ pub unsafe fn should_trigger(me: *mut sdk::CBaseEntity, eyes: Vector, angles: QA
         if index < 1 || index > 32 { return false; }
 
         let friendly = *ptr_offset::<_, libc::c_int>(tr.ent, OFFSETS.m_iTeamNum) == myteam;
-       !friendly
+       !friendly && tr.hitbox == 0
     }
 }

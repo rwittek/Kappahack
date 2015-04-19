@@ -50,6 +50,8 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
 
     let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
+    let meorigin = sdk::CBaseEntity_GetAbsOrigin(me);
+    let eyes = *meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
 
     for ent in (1..32) 
@@ -61,19 +63,15 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
 
                 let friendly = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_iTeamNum) == myteam;
                 let dormant = sdk::CBaseEntity_IsDormant(ent); 
-                if dormant { continue }
-                let color = if friendly {
-                    [0, 255, 128]
-                } else {
-                    [255, 50, 50]
-                };
-                if !friendly {
-                    sdk::DebugOverlay_AddLineOverlay(INTERFACES.debugoverlay, origin, &(*origin + Vector { x: 0.0, y: 0.0, z: 64.0 }), color[0], color[1], color[2], true, 0.05);
-                }
+                if dormant || friendly { continue }
+
+                *ptr_offset::<_, bool>(ent, 0x0DB4) = true;
+                sdk::CBaseEntity_UpdateGlowEffect(ent);
+                
             }
-    /*if ::triggerbot::should_trigger(me, eyes, angles) {
+    if ::triggerbot::should_trigger(me, eyes, (*cmd).viewangles) {
         (*cmd).buttons |= 1;
-    }*/
+    }
     let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
     if flags & 1 == 0 {
         (*cmd).buttons &= !(4);
@@ -85,11 +83,9 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
 
     static mut FLIP: bool = false;
     FLIP = !FLIP;
-    if !FLIP {
-        *sendpacket_ptr = false;
-    }
+    
     static mut ANG_ACCUM: f32 = 0.0;
-    if (*cmd).buttons & 1 == 0 {
+    if false && (*cmd).buttons & 1 == 0 {
         use std::f32::consts::PI;
         ANG_ACCUM = (ANG_ACCUM + (1.0 / 7.0 * PI)) % (2.0 * PI); 
         let newang = ANG_ACCUM;
