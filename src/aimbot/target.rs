@@ -1,7 +1,11 @@
 use INTERFACES;
+use OFFSETS;
+use offsets::ptr_offset;
 use libc;
-use sdk;
-use sdk::Vector;
+use sdk::{self, Ray_t, trace_t, Vector};
+use std::mem;
+
+const TRIGGER_MASK: libc::c_uint = 0x200400B; 
 
 pub struct Target {
     pub pos: Vector
@@ -10,12 +14,15 @@ pub struct Target {
 #[allow(dead_code)]
 pub struct Targets {
     current_entnum: libc::c_int,
+    highest_entnum: libc::c_int,
 }
 impl Targets {
-    #[allow(dead_code)]
     pub fn new() -> Targets {
         Targets {
-            current_entnum: 1
+            current_entnum: 0,
+            highest_entnum: unsafe {
+                sdk::CEntList_GetHighestEntityIndex(INTERFACES.entlist) 
+            }
         }
     }
 
@@ -24,8 +31,7 @@ impl Targets {
 impl Iterator for Targets {
     type Item = Target;
     fn next(&mut self) -> Option<Target> {
-        self.current_entnum += 1;
-        while self.current_entnum < 65 {
+        while self.current_entnum <= self.highest_entnum {
             let targ = unsafe {
                 get_target(self.current_entnum)
             };
@@ -41,14 +47,51 @@ impl Iterator for Targets {
 }
 
 unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
+    use std::ffi::{CStr, CString};
     let ent = sdk::CEntList_GetClientEntity(INTERFACES.entlist, entnum);
     if ent.is_null() {
+        return None;
+    }
+    let dormant = sdk::CBaseEntity_IsDormant(ent); 
+    if dormant { return None;
+    }
+    let class = sdk::CBaseEntity_GetClientClass(ent);
+    let playerclassname = CString::new("CTFPlayer").unwrap();
+    let classname = CStr::from_ptr((*class).name); 
+    if classname != &*playerclassname {
         return None;
     }
 
     let origin = sdk::CBaseEntity_GetAbsOrigin(ent);
 
-    Some(Target {
-        pos: *origin 
-    })
+    let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
+    let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
+    let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
+    let friendly = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_iTeamNum) == myteam;
+    let alive = *ptr_offset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
+    let targpos = *origin + Vector { x: 0.0, y: 0.0, z: 45.0 } ;
+
+    if !friendly && alive {
+        let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
+        let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
+
+        let ray = Ray_t::new(eyes, targpos);
+        let mut tr = mem::zeroed::<trace_t>();
+        sdk::CTraceFilterSkipEntity_SetHandle(sdk::GLOBAL_TRACEFILTER_PTR, *sdk::CBaseEntity_GetRefEHandle(me));
+
+        sdk::CEngineTrace_TraceRay(INTERFACES.trace,
+                                   &ray,
+                                   TRIGGER_MASK,
+                                   sdk::GLOBAL_TRACEFILTER_PTR,
+                                   &mut tr);
+        if tr.ent == ent {
+            Some(Target {
+                pos: targpos 
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    }  
 }

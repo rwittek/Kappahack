@@ -69,7 +69,7 @@ fn get_factory_from_dll(name: &str) -> CreateInterfaceFn {
     }
 }
 
-fn get_module(name: &str) -> winapi::HMODULE {
+pub fn get_module(name: &str) -> winapi::HMODULE {
     let name = ::std::ffi::CString::new(name).unwrap();
     loop {
         let handle = unsafe {

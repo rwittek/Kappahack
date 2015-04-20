@@ -21,20 +21,26 @@ pub enum DebugOverlay {}
 
 pub enum CInput {}
 
+pub enum INetChannelInfo {}
+
 #[allow(dead_code)]
 extern "C" {
     pub static GLOBAL_TRACEFILTER_PTR: *mut ITraceFilter;
+    pub static mut ESTIMATE_ABS_VELOCITY: *const ();
 
     pub fn CBaseEntity_IsDormant(_this: *mut CBaseEntity) -> bool;
     pub fn CBaseEntity_GetAbsOrigin(_this: *mut CBaseEntity) -> &Vector;
     pub fn CBaseEntity_GetAbsAngles(_this: *mut CBaseEntity) -> &QAngle;
     pub fn CBaseEntity_GetRenderBounds(_this: *mut CBaseEntity, mins: &mut Vector, maxes: &mut Vector);
+    pub fn CBaseEntity_GetClientClass(_this: *mut CBaseEntity) -> *const ClientClass;
     pub fn CBaseEntity_UpdateGlowEffect(_this: *mut CBaseEntity);
 
     pub fn CBaseEntity_GetIndex(_this: *mut CBaseEntity) -> libc::c_int;
     pub fn CBaseEntity_GetRefEHandle(_this: *mut CBaseEntity) -> &libc::c_int;
+    pub fn CBaseEntity_EstimateAbsVelocity(_this: *mut CBaseEntity, vel: &mut Vector);
 
     pub fn CEntList_GetClientEntity(_this: *mut CEntList, entnum: libc::c_int) -> *mut CBaseEntity;
+    pub fn CEntList_GetHighestEntityIndex(_this: *const CEntList) -> libc::c_int;
 
     pub fn CEngineTrace_TraceRay(_this: *mut CEngineTrace,
                                 ray: &Ray_t,
@@ -58,6 +64,10 @@ extern "C" {
     pub fn EngineClient_GetLocalPlayer(_this: *mut EngineClient) -> libc::c_int;
     pub fn EngineClient_GetViewAngles(_this: *mut EngineClient, va: &mut QAngle);
     pub fn EngineClient_SetViewAngles(_this: *mut EngineClient, va: &QAngle);
+    pub fn EngineClient_GetNetChannelInfo(_this: *mut EngineClient) -> *mut INetChannelInfo;
+    
+    pub fn INetChannelInfo_GetLatency(_this: *mut INetChannelInfo, flow: libc::c_int) -> f32;
+
 }
 
 #[repr(C)]
@@ -296,4 +306,14 @@ pub struct CUserCmd {
 	pub mousedy: u16,
 
 	pub hasbeenpredicted: bool
+}
+
+#[repr(C)]
+pub struct ClientClass
+{
+	_pad: [u8; 8],
+	pub name: *const libc::c_char,
+	recvtable: *mut libc::c_void,
+	next_class: *mut ClientClass,
+	pub id: libc::c_int,
 }

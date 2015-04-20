@@ -524,8 +524,12 @@ public:
 	short mousedy; //3A
 	bool hasbeenpredicted; //3C;
 };
-
 class CBaseEntity {};
+
+typedef void (__thiscall* EstimateAbsVelocityFn)( CBaseEntity* thisptr, Vector& vel );
+
+EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
+
 	extern "C" Vector& CBaseEntity_GetAbsOrigin( CBaseEntity *_this )
 	{
 		typedef Vector& ( __thiscall* OriginalFn )( PVOID );
@@ -545,6 +549,10 @@ class CBaseEntity {};
 	{
 		typedef void ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>(_this, 0x384 / 4)(_this);
+	}
+	extern "C" void CBaseEntity_EstimateAbsVelocity( CBaseEntity *_this, Vector &vel )
+	{
+        ESTIMATE_ABS_VELOCITY(_this, vel);
 	}
 /*
 	void GetWorldSpaceCenter( Vector& vWorldSpaceCenter)
@@ -566,13 +574,13 @@ class CBaseEntity {};
 		typedef bool ( __thiscall* OriginalFn )( PVOID, matrix3x4*, int, int, float );
 		return getvfunc<OriginalFn>( pRenderable, 16 )( pRenderable, pBoneToWorldOut, nMaxBones, boneMask, currentTime );
 	}
-	ClientClass* GetClientClass( )
+    */ 
+	extern "C" ClientClass* CBaseEntity_GetClientClass( CBaseEntity *_this )
 	{
-		PVOID pNetworkable = (PVOID)(this + 0x8);
+		PVOID pNetworkable = (PVOID)(_this + 0x8);
 		typedef ClientClass* ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>( pNetworkable, 2 )( pNetworkable );
 	}
-    */
 	extern "C" bool CBaseEntity_IsDormant( CBaseEntity *_this )
 	{
 		PVOID pNetworkable = (PVOID)(_this + 0x8);
@@ -750,12 +758,12 @@ class CEntList;
 		typedef CBaseEntity* ( __thiscall* OriginalFn )( PVOID, int );
 		return getvfunc<OriginalFn>( _this, 3 )( _this, entnum );
 	}
-	CBaseEntity* CEntList_GetClientEntityFromHandle( CEntList *_this, int hEnt )
+	extern "C" CBaseEntity* CEntList_GetClientEntityFromHandle( CEntList *_this, int hEnt )
 	{
 		typedef CBaseEntity* ( __thiscall* OriginalFn )( PVOID, int );
 		return getvfunc<OriginalFn>( _this, 4 )( _this, hEnt );
 	}
-	int CEntList_GetHighestEntityIndex(CEntList *_this)
+	extern "C" int CEntList_GetHighestEntityIndex(CEntList *_this)
 	{
 		typedef int ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>( _this, 6 )( _this );
@@ -766,6 +774,11 @@ class CEngineTrace;
 	{
 		typedef void ( __thiscall* OriginalFn )( PVOID, const Ray_t &, unsigned int, ITraceFilter *, trace_t * );
 		getvfunc<OriginalFn>( _this, 4 )( _this, ray, fMask, pTraceFilter, pTrace );
+	}
+class INetChannelInfo;
+	extern "C" float INetChannelInfo_GetLatency( INetChannelInfo *_this, int flow) {
+		typedef float ( __thiscall* OriginalFn )( PVOID, int flow); 
+		return getvfunc<OriginalFn>( _this, 9 )( _this, flow); 
 	}
 enum playercontrols
 {
