@@ -1,11 +1,11 @@
 use libc;
-use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient};
+use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase};
 use std;
 use winapi;
 use kernel32;
 
 #[allow(non_snake_case)]
-type CreateInterfaceFn = extern "C" fn(
+pub type CreateInterfaceFn = extern "C" fn(
     pName: *const libc::c_char,
     pReturnCode: *mut libc::c_int
 ) -> *mut libc::c_void;
@@ -22,7 +22,8 @@ pub struct Interfaces {
     pub trace: *mut CEngineTrace,
     pub entlist: *mut CEntList,
     pub debugoverlay: *mut DebugOverlay,
-    pub input: *mut CInput 
+    pub input: *mut CInput,
+    pub globals: *mut CGlobalVarsBase
 }
 unsafe impl Send for Interfaces {}
 unsafe impl Sync for Interfaces {}
@@ -87,5 +88,6 @@ pub static mut INTERFACES: Interfaces = Interfaces {
     trace: 0 as *mut _,
     entlist: 0 as *mut _,
     debugoverlay: 0 as *mut _,
-    input: 0 as *mut _
+    input: 0 as *mut _,
+    globals: 0 as *mut _
 };

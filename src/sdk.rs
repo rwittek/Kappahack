@@ -317,3 +317,24 @@ pub struct ClientClass
 	next_class: *mut ClientClass,
 	pub id: libc::c_int,
 }
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CGlobalVarsBase { 
+    realtime: libc::c_float,
+    framecount: libc::c_int,
+    absoluteframetime: libc::c_float,
+    pub curtime: libc::c_float,
+    frametime: libc::c_float,
+    max_clients: libc::c_int,
+    tickcount: libc::c_int,
+    pub interval_per_tick: libc::c_float,
+    interpolation_amount: libc::c_float,
+    sim_ticks_this_frame: libc::c_int,
+    network_protocol: libc::c_int,
+    save_restore_data: *mut (),
+    m_bclient: bool,
+    n_timestamp_networking_base: libc::c_int,
+    n_timestamp_randomize_window: libc::c_int,
+}
+

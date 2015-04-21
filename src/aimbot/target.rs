@@ -31,16 +31,17 @@ impl Targets {
 impl Iterator for Targets {
     type Item = Target;
     fn next(&mut self) -> Option<Target> {
-        while self.current_entnum <= self.highest_entnum {
+        while self.current_entnum < self.highest_entnum {
             let targ = unsafe {
                 get_target(self.current_entnum)
             };
+
+            self.current_entnum += 1;
 
             if targ.is_some() {
                 return targ;
             }
 
-            self.current_entnum += 1;
         }
         None
     }
@@ -56,9 +57,8 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     if dormant { return None;
     }
     let class = sdk::CBaseEntity_GetClientClass(ent);
-    let playerclassname = CString::new("CTFPlayer").unwrap();
     let classname = CStr::from_ptr((*class).name); 
-    if classname != &*playerclassname {
+    if classname.to_bytes() != b"CTFPlayer" {
         return None;
     }
 

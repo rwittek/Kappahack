@@ -5,10 +5,13 @@ use sdk::Vector;
 use std::mem;
 use libc;
 use offsets::ptr_offset;
+use interfaces::CreateInterfaceFn;
 use vmthook;
 
 pub unsafe fn install_client() {
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.client as *mut _);
+    REAL_INIT = hooker.get_orig_method(0);
+    hooker.hook(0, mem::transmute::<_, *const ()>(hooked_init));
     REAL_CREATEMOVE = hooker.get_orig_method(21);
     hooker.hook(21, mem::transmute::<_, *const ()>(hooked_createmove));
 
@@ -19,6 +22,7 @@ pub unsafe fn install_client() {
 }
 
 pub static mut REAL_CREATEMOVE: *const () = 0 as *const ();
+pub static mut REAL_INIT: *const () = 0 as *const ();
 
 type CreateMoveFn = unsafe extern "stdcall" fn(libc::c_int,
                                                libc::c_float,
@@ -29,6 +33,19 @@ unsafe extern "stdcall" fn hooked_getusercmd(sequence_number: libc::c_int) -> *m
     cmds.offset((sequence_number % 90) as isize)
 }
 
+
+unsafe extern "stdcall" fn hooked_init(app_sys_factory: CreateInterfaceFn,
+                                             physics_factory: CreateInterfaceFn,
+                                             globals: *mut sdk::CGlobalVarsBase) -> libc::c_int
+{
+    INTERFACES.globals = globals;
+    mem::transmute::<_, unsafe extern "stdcall" fn(CreateInterfaceFn,
+                                                   CreateInterfaceFn,
+                                                   *mut sdk::CGlobalVarsBase) -> libc::c_int
+        >(REAL_INIT)(app_sys_factory,
+                     physics_factory,
+                    globals)
+}
 unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                                       input_sample_frametime: libc::c_float,
                                       active: bool)
@@ -44,14 +61,19 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                     input_sample_frametime,
                     active);
 
+    let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
+    let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
+
+    // curtime is off in createmove, patch it up for now
+    let old_curtime = (*INTERFACES.globals).curtime;
+    (*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
+
     let sendpacket_ptr = ptr_offset::<_, bool>(*ebp, -1);
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
     let cmd_ptr = cmds.offset((sequence_number % 90) as isize);
     let mut cmd = *cmd_ptr;
     let orig_angles = cmd.viewangles;
 
-    let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
-    let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me);
 
@@ -99,8 +121,21 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         ::aimbot::aim(t, &mut cmd);
         cmd.buttons |= 1<<11;
     }
-    /*
-    if let Some(t) = ::aimbot::targets().next() {
+
+    let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
+    let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
+    let viewray = cmd.viewangles.to_vector(); 
+
+    /*if let Some(t) = ::aimbot::targets().fold(
+        None,
+        |acc, target| {
+            match acc {
+                Some(ref best) if (target.pos - eyes).normalize().dot(&viewray) > (best.pos - eyes).normalize().dot(&viewray) => Some(target),
+                Some(best) => Some(best),
+                None => Some(target),
+            }
+        }) {
+
         ::aimbot::aim(t, &mut cmd);
     } else {
         cmd.buttons &= !1;
@@ -123,14 +158,14 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     }
     let (fwd, right, up) = (cmd.forwardmove, cmd.sidemove, cmd.upmove);
 
-    let orig_angles = sdk::QAngle { pitch: cmd.viewangles.pitch, ..orig_angles };
+    let new_angles = sdk::QAngle { pitch: 0.0, ..cmd.viewangles };
+    let orig_angles = sdk::QAngle { pitch: 0.0, ..orig_angles };
 	let (orig_fwd, orig_right, orig_up) = orig_angles.to_vectors();
-	let (orig_fwdnorm, orig_rightnorm, orig_upnorm) = (orig_fwd.normalize(), orig_right.normalize(), orig_up.normalize());
-	let (new_fwd, new_right, new_up) = cmd.viewangles.to_vectors();
+	let (new_fwd, new_right, new_up) = new_angles.to_vectors();
 	
-    cmd.forwardmove = fwd * new_fwd.dot(&orig_fwd) + right * new_fwd.dot(&orig_rightnorm) + up * new_fwd.dot(&orig_upnorm);
-    cmd.sidemove = fwd * new_right.dot(&orig_fwdnorm) + right * new_right.dot(&orig_rightnorm) + up * new_right.dot(&orig_upnorm);
-    cmd.upmove = fwd * new_up.dot(&orig_fwdnorm) + right * new_up.dot(&orig_rightnorm) + up * new_up.dot(&orig_upnorm);
+    cmd.forwardmove = fwd * new_fwd.dot(&orig_fwd) + right * new_fwd.dot(&orig_right) + up * new_fwd.dot(&orig_up);
+    cmd.sidemove = fwd * new_right.dot(&orig_fwd) + right * new_right.dot(&orig_right) + up * new_right.dot(&orig_up);
+    cmd.upmove = fwd * new_up.dot(&orig_fwd) + right * new_up.dot(&orig_right) + up * new_up.dot(&orig_up);
 
     cmd.command_number = 2076615043;
     cmd.random_seed = 39;
@@ -140,6 +175,8 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let verified_cmd = verified_cmds.offset((sequence_number % 90) as isize);
     (*verified_cmd).m_cmd = cmd;
     verify_usercmd(verified_cmd);
+
+    (*INTERFACES.globals).curtime = old_curtime;
 }
 
 unsafe fn verify_usercmd(verified_cmd: *mut sdk::CVerifiedUserCmd) {
