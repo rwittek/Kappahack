@@ -58,18 +58,22 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     }
     let class = sdk::CBaseEntity_GetClientClass(ent);
     let classname = CStr::from_ptr((*class).name); 
-    if classname.to_bytes() != b"CTFPlayer" {
+    let targettable = match classname.to_bytes() {
+        b"CTFPlayer" | b"CObjectSentrygun" => true, 
+        _ => false
+    };
+    if !targettable { 
         return None;
     }
-
-    let origin = sdk::CBaseEntity_GetAbsOrigin(ent);
 
     let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let friendly = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_iTeamNum) == myteam;
-    let alive = *ptr_offset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
-    let targpos = *origin + Vector { x: 0.0, y: 0.0, z: 45.0 } ;
+    let alive = *ptr_o+ ffset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
+    sdk::CBaseEntity_Interpolate(ent, (*INTERFACES.globals).curtime + (*INTERFACES.globals).interval_per_tick);
+    let mut targpos = Vector { x: 0., y: 0., z: 0. };
+    sdk::CBaseEntity_GetWorldSpaceCenter(ent, &mut targpos);
 
     if !friendly && alive {
         let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();

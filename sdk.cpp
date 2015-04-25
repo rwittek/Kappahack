@@ -387,35 +387,6 @@ struct ITraceFilterVtable {
 
 class ITraceFilter {};
 
-class CTraceFilterSkipEntity: public ITraceFilter
-{
-	public: 
-	ITraceFilterVtable *vt;
-	int skiphandle;
-	CTraceFilterSkipEntity();
-};
-
-bool __thiscall CTraceFilterSkipEntity_ShouldHitEntity(PVOID *_this, IHandleEntity *pEntity, int contentsMask) {
-	return IHandleEntity_GetRefEHandle(pEntity) != (((CTraceFilterSkipEntity *)_this) ->skiphandle);
-}
-
-TraceType_t __thiscall CTraceFilterSkipEntity_GetTraceType(PVOID *_this) {
-	return TRACE_EVERYTHING;
-}
-
-ITraceFilterVtable CTraceFilterSkipEntityVtable;
-
-CTraceFilterSkipEntity::CTraceFilterSkipEntity() {
-	vt = &CTraceFilterSkipEntityVtable;
-	vt->ShouldHitEntity = CTraceFilterSkipEntity_ShouldHitEntity;
-	vt->GetTraceType = CTraceFilterSkipEntity_GetTraceType;
-}
-
-CTraceFilterSkipEntity global_tracefilter;
-ITraceFilter *GLOBAL_TRACEFILTER_PTR = &global_tracefilter;
-extern "C" void CTraceFilterSkipEntity_SetHandle(CTraceFilterSkipEntity *_this, int handle) {
-	_this->skiphandle = handle;
-}
 
 class VectorAligned : public Vector {} __attribute__((aligned(16)));
 
@@ -545,6 +516,11 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 		typedef Vector& ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>(_this, 10)(_this);
 	}
+	extern "C" void CBaseEntity_Interpolate( CBaseEntity *_this, float currentTime)
+	{
+		typedef void ( __thiscall* OriginalFn )( PVOID, float );
+		return getvfunc<OriginalFn>(_this, 0x184 / 4)(_this, currentTime);
+	}
 	extern "C" void CBaseEntity_UpdateGlowEffect( CBaseEntity *_this )
 	{
 		typedef void ( __thiscall* OriginalFn )( PVOID );
@@ -554,14 +530,22 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 	{
         ESTIMATE_ABS_VELOCITY(_this, vel);
 	}
-/*
-	void GetWorldSpaceCenter( Vector& vWorldSpaceCenter)
+
+	extern "C" void CBaseEntity_GetRenderBounds( CBaseEntity *_this, Vector& mins, Vector& maxs )
+	{
+		PVOID pRenderable = (PVOID)(_this + 0x4);
+		typedef void ( __thiscall* OriginalFn )( PVOID, Vector& , Vector& );
+		getvfunc<OriginalFn>( pRenderable, 20)( pRenderable, mins, maxs );
+	}
+
+	extern "C" void CBaseEntity_GetWorldSpaceCenter( CBaseEntity *_this, Vector& vWorldSpaceCenter)
 	{
 		Vector vMin, vMax;
-		this->GetRenderBounds( vMin, vMax );
-		vWorldSpaceCenter = this->GetAbsOrigin();
+		CBaseEntity_GetRenderBounds( _this, vMin, vMax );
+		vWorldSpaceCenter = CBaseEntity_GetAbsOrigin(_this);
 		vWorldSpaceCenter.z += (vMin.z + vMax.z) / 2;
 	}
+/*
 	DWORD* GetModel( )
 	{
 		PVOID pRenderable = (PVOID)(this + 0x4);
@@ -594,13 +578,6 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 		return getvfunc<OriginalFn>( pNetworkable, 9 )( pNetworkable );
 	}
 	
-	extern "C" void CBaseEntity_GetRenderBounds( CBaseEntity *_this, Vector& mins, Vector& maxs )
-	{
-		PVOID pRenderable = (PVOID)(_this + 0x4);
-		typedef void ( __thiscall* OriginalFn )( PVOID, Vector& , Vector& );
-		getvfunc<OriginalFn>( pRenderable, 20)( pRenderable, mins, maxs );
-	}
-
 class EngineClient{};
 
 	extern "C" void EngineClient_GetScreenSize( EngineClient *_this, int& width, int& height )
@@ -925,3 +902,39 @@ public:
 		return getvfunc<OriginalFn>( this, 8 )( this, seq );
 	}
 };
+
+class CTraceFilterSkipEntity: public ITraceFilter
+{
+	public: 
+	ITraceFilterVtable *vt;
+	int skiphandle;
+	CTraceFilterSkipEntity();
+};
+
+bool __thiscall CTraceFilterSkipEntity_ShouldHitEntity(PVOID *_this, IHandleEntity *pEntity, int contentsMask) {
+
+    ClientClass *clientclass = CBaseEntity_GetClientClass((CBaseEntity *)pEntity);
+    if (clientclass && strcmp(clientclass->chName, "CFuncRespawnRoomVisualizer")) {
+        return IHandleEntity_GetRefEHandle(pEntity) != (((CTraceFilterSkipEntity *)_this) ->skiphandle);
+    } else {
+       return false;
+    } 
+}
+
+TraceType_t __thiscall CTraceFilterSkipEntity_GetTraceType(PVOID *_this) {
+	return TRACE_EVERYTHING;
+}
+
+ITraceFilterVtable CTraceFilterSkipEntityVtable;
+
+CTraceFilterSkipEntity::CTraceFilterSkipEntity() {
+	vt = &CTraceFilterSkipEntityVtable;
+	vt->ShouldHitEntity = CTraceFilterSkipEntity_ShouldHitEntity;
+	vt->GetTraceType = CTraceFilterSkipEntity_GetTraceType;
+}
+
+CTraceFilterSkipEntity global_tracefilter;
+ITraceFilter *GLOBAL_TRACEFILTER_PTR = &global_tracefilter;
+extern "C" void CTraceFilterSkipEntity_SetHandle(CTraceFilterSkipEntity *_this, int handle) {
+	_this->skiphandle = handle;
+}

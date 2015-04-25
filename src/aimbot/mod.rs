@@ -10,12 +10,14 @@ pub fn targets() -> Targets {
     Targets::new()
 }
 
-#[allow(dead_code)]
 pub unsafe fn aim(targ: Target, cmd: &mut sdk::CUserCmd) {
     let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine); 
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
+    let mut vel = Vector { x: 0.0, y: 0.0, z: 0.0 };
+    sdk::CBaseEntity_EstimateAbsVelocity(me, &mut vel);
+    let eyes = eyes + vel.scale(4.0 * (*INTERFACES.globals).interval_per_tick);
 
     let aimray = targ.pos - eyes;
 

@@ -32,8 +32,10 @@ extern "C" {
     pub fn CBaseEntity_GetAbsOrigin(_this: *mut CBaseEntity) -> &Vector;
     pub fn CBaseEntity_GetAbsAngles(_this: *mut CBaseEntity) -> &QAngle;
     pub fn CBaseEntity_GetRenderBounds(_this: *mut CBaseEntity, mins: &mut Vector, maxes: &mut Vector);
+    pub fn CBaseEntity_GetWorldSpaceCenter(_this: *mut CBaseEntity, out: &mut Vector);
     pub fn CBaseEntity_GetClientClass(_this: *mut CBaseEntity) -> *const ClientClass;
     pub fn CBaseEntity_UpdateGlowEffect(_this: *mut CBaseEntity);
+    pub fn CBaseEntity_Interpolate(_this: *mut CBaseEntity, currentTime: f32);
 
     pub fn CBaseEntity_GetIndex(_this: *mut CBaseEntity) -> libc::c_int;
     pub fn CBaseEntity_GetRefEHandle(_this: *mut CBaseEntity) -> &libc::c_int;
@@ -322,12 +324,12 @@ pub struct ClientClass
 #[derive(Clone, Copy)]
 pub struct CGlobalVarsBase { 
     realtime: libc::c_float,
-    framecount: libc::c_int,
+    pub framecount: libc::c_int,
     absoluteframetime: libc::c_float,
     pub curtime: libc::c_float,
-    frametime: libc::c_float,
+    pub frametime: libc::c_float,
     max_clients: libc::c_int,
-    tickcount: libc::c_int,
+    pub tickcount: libc::c_int,
     pub interval_per_tick: libc::c_float,
     interpolation_amount: libc::c_float,
     sim_ticks_this_frame: libc::c_int,

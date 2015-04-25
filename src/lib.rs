@@ -14,6 +14,7 @@ extern crate rand;
 pub use interfaces::INTERFACES;
 pub use offsets::OFFSETS;
 
+mod autostrafe;
 mod aimbot;
 mod airblast;
 mod hooks;
