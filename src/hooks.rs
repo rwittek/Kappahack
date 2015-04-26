@@ -65,8 +65,8 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
 
     // curtime is off in createmove, patch it up for now
-    //let old_curtime = (*INTERFACES.globals).curtime;
-    //(*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
+    let old_curtime = (*INTERFACES.globals).curtime;
+    (*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
 
     let sendpacket_ptr = ptr_offset::<_, bool>(*ebp, -1);
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
@@ -117,11 +117,12 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         };
     }
 
-    /*if let Some(t) = ::airblast::Targets::new().next() {
+    if let Some(t) = ::airblast::Targets::new().next() {
         ::aimbot::aim(t, &mut cmd);
         cmd.buttons |= 1<<11;
-    }*/
+    }
 
+    /*
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let viewray = cmd.viewangles.to_vector(); 
@@ -138,7 +139,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         }) {
 
         ::aimbot::aim(t, &mut cmd);
-    }
+    }*/
 
     if cmd.viewangles.pitch > 90.0 {
         cmd.viewangles.pitch = cmd.viewangles.pitch - 360.0;
@@ -176,7 +177,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     (*verified_cmd).m_cmd = cmd;
     verify_usercmd(verified_cmd);
 
-    //(*INTERFACES.globals).curtime = old_curtime;
+    (*INTERFACES.globals).curtime = old_curtime;
 }
 
 

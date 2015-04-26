@@ -70,8 +70,9 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let friendly = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_iTeamNum) == myteam;
-    let alive = *ptr_o+ ffset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
-    sdk::CBaseEntity_Interpolate(ent, (*INTERFACES.globals).curtime + (*INTERFACES.globals).interval_per_tick);
+    let alive = *ptr_offset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
+    let targtime = (*INTERFACES.globals).interval_per_tick * ((*INTERFACES.globals).tickcount as f32); 
+    sdk::CBaseEntity_Interpolate(ent, targtime); 
     let mut targpos = Vector { x: 0., y: 0., z: 0. };
     sdk::CBaseEntity_GetWorldSpaceCenter(ent, &mut targpos);
 
@@ -88,7 +89,7 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
                                    TRIGGER_MASK,
                                    sdk::GLOBAL_TRACEFILTER_PTR,
                                    &mut tr);
-        if tr.ent == ent {
+        if tr.ent == ent || tr.fraction > 0.97 {
             Some(Target {
                 pos: targpos 
             })

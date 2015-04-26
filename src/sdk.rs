@@ -264,7 +264,7 @@ pub struct trace_t {
     endpos: Vector,
 	plane: cplane_t,
 
-	fraction: libc::c_float,
+	pub fraction: libc::c_float,
 	contents: i32,
 	dispFlags: libc::c_ushort,
 
