@@ -1,5 +1,5 @@
 use libc;
-use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase};
+use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase, ISurface, IPanel };
 use std;
 use winapi;
 use kernel32;
@@ -23,7 +23,9 @@ pub struct Interfaces {
     pub entlist: *mut CEntList,
     pub debugoverlay: *mut DebugOverlay,
     pub input: *mut CInput,
-    pub globals: *mut CGlobalVarsBase
+    pub globals: *mut CGlobalVarsBase,
+    pub surface: *mut ISurface, 
+    pub panel: *mut IPanel, 
 }
 unsafe impl Send for Interfaces {}
 unsafe impl Sync for Interfaces {}
@@ -32,6 +34,8 @@ impl Interfaces {
     pub unsafe fn load(&mut self) { 
         let client_factory = get_factory_from_dll("client.dll");
         let engine_factory = get_factory_from_dll("engine.dll");
+        let vguimatsurface_factory = get_factory_from_dll("vguimatsurface.dll");
+        let vgui_factory= get_factory_from_dll("vgui2.dll");
 
         *self = Interfaces {
             engine: get_interface_from_factory("VEngineClient014", engine_factory) as *mut EngineClient,
@@ -39,6 +43,8 @@ impl Interfaces {
             trace: get_interface_from_factory("EngineTraceClient003", engine_factory) as *mut CEngineTrace,
             entlist: get_interface_from_factory("VClientEntityList003", client_factory) as *mut CEntList,
             debugoverlay: get_interface_from_factory("VDebugOverlay003", engine_factory) as *mut DebugOverlay,
+            surface: get_interface_from_factory("VGUI_Surface030", vguimatsurface_factory) as *mut ISurface,
+            panel: get_interface_from_factory("VGUI_Panel009", vgui_factory) as *mut IPanel,
             .. *self
         }
     }
@@ -51,7 +57,6 @@ fn get_interface_from_factory(iface: &str, factory: CreateInterfaceFn) -> *mut (
     if status == 0 && !result.is_null() {
         result as *mut ()
     } else {
-        ::show_popup(&format!("Interface not found: {:?}", &iface));
         panic!()
     }
 }
@@ -89,5 +94,7 @@ pub static mut INTERFACES: Interfaces = Interfaces {
     entlist: 0 as *mut _,
     debugoverlay: 0 as *mut _,
     input: 0 as *mut _,
-    globals: 0 as *mut _
+    globals: 0 as *mut _,
+    surface: 0 as *mut _,
+    panel: 0 as *mut _,
 };

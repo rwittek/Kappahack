@@ -17,6 +17,7 @@ pub use offsets::OFFSETS;
 mod autostrafe;
 mod aimbot;
 mod airblast;
+mod gui;
 mod hooks;
 mod interfaces;
 mod offsets;
@@ -25,23 +26,6 @@ mod sdk;
 mod triggerbot;
 mod vmthook;
 mod utils;
-
-fn show_popup_caption(msg: &str, caption: &str) {
-    use std::ffi::CString;
-    let msg = CString::new(msg).unwrap();
-    let caption = CString::new(caption).unwrap();
-    unsafe {
-        user32::MessageBoxA(
-            std::ptr::null_mut(),
-            msg.as_ptr(),
-            caption.as_ptr(),
-            winapi::MB_OK
-            );
-    }
-}
-fn show_popup(msg: &str) {
-    show_popup_caption(msg, "kappa")
-}
 
 #[allow(dead_code)]
 extern "stdcall" {

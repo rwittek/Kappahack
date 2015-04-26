@@ -18,7 +18,6 @@ impl VMTHooker {
 		// yolo.
 		let new_vmt = libc::malloc(mem::size_of::<VMT>() as libc::size_t) as *mut VMT;
 		if new_vmt.is_null() {
-            ::show_popup("Failed to malloc() a VMT!");
             panic!()
 		}
 		*new_vmt = *vmt_ptr;

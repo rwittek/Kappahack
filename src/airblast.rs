@@ -52,10 +52,14 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     let class = sdk::CBaseEntity_GetClientClass(ent);
     let classname = CStr::from_ptr((*class).name); 
     let reflectable = match classname.to_bytes() { 
-        b"CTFProjectile_Rocket" => true,
-        b"CTFProjectile_SentryRocket" => true,
-        b"CTFBaseRocket" => true,
-        _ => false
+        b"CTFProjectile_Rocket" | b"CTFProjectile_Flare"
+				| b"CTFProjectile_EnergyBall" | b"CTFProjectile_HealingBolt" 
+				| b"CTFProjectile_Arrow" | b"CTFProjectile_SentryRocket" 
+				| b"CTFProjectile_Throwable" | b"CTFThrowable" 
+				| b"CTFProjectile_Cleaver"  | b"CTFProjectile_JarMilk" 
+				| b"CTFProjectile_Jar" | b"CTFStunBall" 
+				| b"CTFGrenadePipebombProjectile" | b"CTFBall_Ornament" => true,
+                _ => false
     };
     if !reflectable {
         return None;

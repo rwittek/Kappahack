@@ -23,6 +23,10 @@ pub enum CInput {}
 
 pub enum INetChannelInfo {}
 
+pub enum ISurface {}
+
+pub enum IPanel {}
+
 #[allow(dead_code)]
 extern "C" {
     pub static GLOBAL_TRACEFILTER_PTR: *mut ITraceFilter;
@@ -70,6 +74,31 @@ extern "C" {
     
     pub fn INetChannelInfo_GetLatency(_this: *mut INetChannelInfo, flow: libc::c_int) -> f32;
 
+    pub fn ISurface_CreateFont(_this: *mut ISurface) -> libc::c_uint;
+    pub fn ISurface_SetFontGlyphSet(_this: *mut ISurface,
+                                    font: &libc::c_ulong,
+                                    windows_font_name: *const libc::c_char,
+                                    tall: libc::c_int,
+                                    weight: libc::c_int,
+                                    blur: libc::c_int,
+                                    scanlines: libc::c_int,
+                                    flags: libc::c_int);
+
+    pub fn ISurface_DrawSetTextPos(_this: *mut ISurface, x: libc::c_int, y: libc::c_int);
+    pub fn ISurface_DrawSetTextColor(_this: *mut ISurface,
+                                     r: libc::c_int,
+                                     g: libc::c_int,
+                                     b: libc::c_int,
+                                     a: libc::c_int);
+
+    pub fn ISurface_DrawSetTextFont(_this: *mut ISurface, font: libc::c_ulong); 
+    pub fn ISurface_DrawPrintText(_this: *mut ISurface,
+                                  text: *const u16,
+                                  len: libc::c_int);
+
+    pub static mut REAL_PAINTTRAVERSE: *const ();
+    pub static mut IPANEL: *const ();
+    pub fn IPanel_PaintTraverse(unk1: libc::c_uint, unk2: bool, unk3: bool);
 }
 
 #[repr(C)]
@@ -331,7 +360,7 @@ pub struct CGlobalVarsBase {
     max_clients: libc::c_int,
     pub tickcount: libc::c_int,
     pub interval_per_tick: libc::c_float,
-    interpolation_amount: libc::c_float,
+    pub interpolation_amount: libc::c_float,
     sim_ticks_this_frame: libc::c_int,
     network_protocol: libc::c_int,
     save_restore_data: *mut (),

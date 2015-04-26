@@ -58,9 +58,10 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     }
     let class = sdk::CBaseEntity_GetClientClass(ent);
     let classname = CStr::from_ptr((*class).name); 
-    let targettable = match classname.to_bytes() {
-        b"CTFPlayer" | b"CObjectSentrygun" => true, 
-        _ => false
+    let (targettable, is_player) = match classname.to_bytes() {
+        b"CTFPlayer" => (true, true),
+        b"CObjectSentrygun" => (true, false),
+        _ => (false, false) 
     };
     if !targettable { 
         return None;
@@ -71,12 +72,19 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let friendly = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_iTeamNum) == myteam;
     let alive = *ptr_offset::<_, i8>(ent, OFFSETS.m_lifeState) == 0;
-    let targtime = (*INTERFACES.globals).interval_per_tick * ((*INTERFACES.globals).tickcount as f32); 
-    sdk::CBaseEntity_Interpolate(ent, targtime); 
-    let mut targpos = Vector { x: 0., y: 0., z: 0. };
-    sdk::CBaseEntity_GetWorldSpaceCenter(ent, &mut targpos);
+    let condok = if is_player {
+        let cond = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_nPlayerCond);
+        let condex = *ptr_offset::<_, libc::c_int>(ent, OFFSETS.m_nPlayerCondEx);
+        (cond & (1<<14 | 1<<5 | 1<<13) == 0) && (condex & (1<<19) == 0) 
+    } else {
+        true
+    };
 
-    if !friendly && alive {
+    if !friendly && alive && condok {
+        let targtime = (*INTERFACES.globals).curtime;
+        sdk::CBaseEntity_Interpolate(ent, targtime); 
+        let mut targpos = Vector { x: 0., y: 0., z: 0. };
+        sdk::CBaseEntity_GetWorldSpaceCenter(ent, &mut targpos);
         let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
         let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
 

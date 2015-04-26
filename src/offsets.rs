@@ -7,6 +7,8 @@ pub struct Offsets {
     pub m_fFlags: isize,
     pub m_iHealth: isize,
     pub m_nTickBase: isize,
+    pub m_nPlayerCond: isize,
+    pub m_nPlayerCondEx: isize,
 }
 unsafe impl Sync for Offsets {}
 unsafe impl Send for Offsets {} 
@@ -30,4 +32,6 @@ pub static mut OFFSETS: Offsets = Offsets {
     m_fFlags: 0x37C,
     m_iHealth: 0x0A8,
     m_nTickBase: 0x1140,
+    m_nPlayerCond: 0x17E0 + 0x5B0,
+    m_nPlayerCondEx: 0x5B4,
 };

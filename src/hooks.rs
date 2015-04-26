@@ -1,3 +1,4 @@
+#![allow(unused_variables)]
 use INTERFACES;
 use OFFSETS;
 use sdk;
@@ -19,14 +20,25 @@ pub unsafe fn install_client() {
 
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.input as *mut _);
     hooker.hook(8, mem::transmute::<_, *const ()>(hooked_getusercmd));
+
+    let mut hooker = vmthook::VMTHooker::new(INTERFACES.panel as *mut _);
+    REAL_PAINTTRAVERSE = hooker.get_orig_method(41);
+    sdk::REAL_PAINTTRAVERSE = REAL_PAINTTRAVERSE;
+    sdk::IPANEL = INTERFACES.panel as *const ();
+    hooker.hook(41, mem::transmute::<_, *const ()>(hooked_painttraverse));
 }
 
 pub static mut REAL_CREATEMOVE: *const () = 0 as *const ();
 pub static mut REAL_INIT: *const () = 0 as *const ();
+pub static mut REAL_PAINTTRAVERSE: *const () = 0 as *const ();
 
 type CreateMoveFn = unsafe extern "stdcall" fn(libc::c_int,
                                                libc::c_float,
                                                bool);
+
+type PaintTraverseFn = unsafe extern "stdcall" fn(libc::c_int,
+                                               u8,
+                                               u8);
 
 unsafe extern "stdcall" fn hooked_getusercmd(sequence_number: libc::c_int) -> *mut sdk::CUserCmd {
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
@@ -66,7 +78,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
 
     // curtime is off in createmove, patch it up for now
     let old_curtime = (*INTERFACES.globals).curtime;
-    (*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
+    //(*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
 
     let sendpacket_ptr = ptr_offset::<_, bool>(*ebp, -1);
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
@@ -94,6 +106,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
     if flags & 1 == 0 {
         cmd.buttons &= !(4);
+        //::autostrafe::autostrafe(&mut cmd);
     }
 
     if flags & 1 == 0 || flags & 2 != 0 { 
@@ -117,12 +130,11 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         };
     }
 
-    if let Some(t) = ::airblast::Targets::new().next() {
+    /*if let Some(t) = ::airblast::Targets::new().next() {
         ::aimbot::aim(t, &mut cmd);
         cmd.buttons |= 1<<11;
-    }
+    }*/
 
-    /*
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let viewray = cmd.viewangles.to_vector(); 
@@ -139,7 +151,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         }) {
 
         ::aimbot::aim(t, &mut cmd);
-    }*/
+    }
 
     if cmd.viewangles.pitch > 90.0 {
         cmd.viewangles.pitch = cmd.viewangles.pitch - 360.0;
@@ -246,4 +258,10 @@ unsafe fn locate_cinput(createmove: *const ()) -> Option<*mut sdk::CInput> {
         },
         None => None 
     }
+}
+unsafe extern "stdcall" fn hooked_painttraverse(panel: u32,
+                                      unk1: bool,
+                                      unk2: bool) {
+    sdk::IPanel_PaintTraverse(panel, unk1 , unk2 );
+//    ::gui::GUI_MANAGER.draw_text(200, 200, &::gui::Color { r: 2, g: 255, b: 2, a: 255, }, "penis");
 }

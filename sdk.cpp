@@ -664,24 +664,20 @@ class DebugOverlay;
 		return getvfunc<OriginalFn>( _this, 3)( _this, origin, dest, r, g, b, noDepthTest, duration);
 	}
 
-class IPanel
-{
-public:
-	const char *GetName(unsigned int vguiPanel)
+class IPanel { } ;
+	extern "C" const char *IPanel_GetName(IPanel *_this, unsigned int vguiPanel)
 	{
 		typedef const char* ( __thiscall* OriginalFn )( PVOID, unsigned int );
-		return getvfunc<OriginalFn>( this, 36 )( this, vguiPanel );
+		return getvfunc<OriginalFn>( _this, 36 )( _this, vguiPanel );
 	}
-};
 
-class ISurface
-{
-public:
-	void DrawSetColor(int r, int g, int b, int a)
+class ISurface { };
+	extern "C" void ISurface_DrawSetColor(ISurface *_this, int r, int g, int b, int a)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, int, int, int, int);
-		getvfunc<OriginalFn>(this, 11)(this, r, g, b, a);
+		getvfunc<OriginalFn>(_this, 11)(_this, r, g, b, a);
 	}
+/*
 	void DrawFilledRect(int x0, int y0, int x1, int y1)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, int, int, int, int);
@@ -692,42 +688,44 @@ public:
 		typedef void(__thiscall* OriginalFn)(PVOID, int, int, int, int);
 		getvfunc<OriginalFn>(this, 14)(this, x0, y0, x1, y1);
 	}
-	void DrawSetTextFont(unsigned long font)
+    */
+	extern "C" void ISurface_DrawSetTextFont(ISurface *_this, unsigned long font)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, unsigned long);
-		getvfunc<OriginalFn>(this, 17)(this, font);
+		getvfunc<OriginalFn>(_this, 17)(_this, font);
 	}
-	void DrawSetTextColor(int r, int g, int b, int a)
+	extern "C" void ISurface_DrawSetTextColor(ISurface *_this, int r, int g, int b, int a)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, int, int, int, int);
-		getvfunc<OriginalFn>(this, 19)(this, r, g, b, a);
+		getvfunc<OriginalFn>(_this, 19)(_this, r, g, b, a);
 	}
-	void DrawSetTextPos(int x, int y)
+	extern "C" void ISurface_DrawSetTextPos(ISurface *_this, int x, int y)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, int, int);
-		getvfunc<OriginalFn>(this, 20)(this, x, y);
+		getvfunc<OriginalFn>(_this, 20)(_this, x, y);
 	}
-	void DrawPrintText(const wchar_t *text, int textLen)
+	extern "C" void ISurface_DrawPrintText(ISurface *_this, const wchar_t *text, int textLen)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, const wchar_t *, int, int);
-		return getvfunc<OriginalFn>(this, 22)(this, text, textLen, 0);
+		return getvfunc<OriginalFn>(_this, 22)(_this, text, textLen, 0);
 	}
-	unsigned long CreateFont()
+	extern "C" unsigned long ISurface_CreateFont(ISurface *_this)
 	{
 		typedef unsigned int(__thiscall* OriginalFn)(PVOID);
-		return getvfunc<OriginalFn>(this, 66)(this);
+		return getvfunc<OriginalFn>(_this, 66)(_this);
 	}
-	void SetFontGlyphSet(unsigned long &font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags)
+	extern "C" void ISurface_SetFontGlyphSet(ISurface *_this, unsigned long &font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, unsigned long, const char*, int, int, int, int, int, int, int);
-		getvfunc<OriginalFn>(this, 67)(this, font, windowsFontName, tall, weight, blur, scanlines, flags, 0, 0);
+		getvfunc<OriginalFn>(_this, 67)(_this, font, windowsFontName, tall, weight, blur, scanlines, flags, 0, 0);
 	}
+/*
 	void GetTextSize(unsigned long font, const wchar_t *text, int &wide, int &tall)
 	{
 		typedef void(__thiscall* OriginalFn)(PVOID, unsigned long, const wchar_t *, int&, int&);
 		getvfunc<OriginalFn>(this, 75)(this, font, text, wide, tall);
 	}
-};
+    */
 
 class CEntList;
 	extern "C" CBaseEntity* CEntList_GetClientEntity( CEntList *_this, int entnum )
@@ -757,141 +755,6 @@ class INetChannelInfo;
 		typedef float ( __thiscall* OriginalFn )( PVOID, int flow); 
 		return getvfunc<OriginalFn>( _this, 9 )( _this, flow); 
 	}
-enum playercontrols
-{
-	IN_ATTACK = (1 << 0),
-	IN_JUMP	= (1 << 1),
-	IN_DUCK = (1 << 2),
-	IN_FORWARD = (1 << 3),
-	IN_BACK = (1 << 4),
-	IN_USE = (1 << 5),
-	IN_CANCEL = (1 << 6),
-	IN_LEFT = (1 << 7),
-	IN_RIGHT = (1 << 8),
-	IN_MOVELEFT = (1 << 9),
-	IN_MOVERIGHT = (1 << 10),
-	IN_ATTACK2 = (1 << 11),
-	IN_RUN = (1 << 12),
-	IN_RELOAD = (1 << 13),
-	IN_ALT1 = (1 << 14),
-	IN_ALT2 = (1 << 15),
-	IN_SCORE = (1 << 16),	// Used by client.dll for when scoreboard is held down
-	IN_SPEED = (1 << 17),	// Player is holding the speed key
-	IN_WALK = (1 << 18),	// Player holding walk key
-	IN_ZOOM	= (1 << 19),	// Zoom key for HUD zoom
-	IN_WEAPON1 = (1 << 20),	// weapon defines these bits
-	IN_WEAPON2 = (1 << 21),	// weapon defines these bits
-	IN_BULLRUSH = (1 << 22),
-};
-
-enum tf_cond 
-{ 
-    TFCond_Slowed = (1 << 0), //Toggled when a player is slowed down. 
-    TFCond_Zoomed = (1 << 1), //Toggled when a player is zoomed. 
-    TFCond_Disguising = (1 << 2), //Toggled when a Spy is disguising.  
-    TFCond_Disguised = (1 << 3), //Toggled when a Spy is disguised. 
-    TFCond_Cloaked = (1 << 4), //Toggled when a Spy is invisible. 
-    TFCond_Ubercharged = (1 << 5), //Toggled when a player is ?berCharged. 
-    TFCond_TeleportedGlow = (1 << 6), //Toggled when someone leaves a teleporter and has glow beneath their feet. 
-    TFCond_Taunting = (1 << 7), //Toggled when a player is taunting. 
-    TFCond_UberchargeFading = (1 << 8), //Toggled when the ?berCharge is fading. 
-    TFCond_CloakFlicker = (1 << 9), //Toggled when a Spy is visible during cloak. 
-    TFCond_Teleporting = (1 << 10), //Only activates for a brief second when the player is being teleported; not very useful. 
-    TFCond_Kritzkrieged = (1 << 11), //Toggled when a player is being crit buffed by the KritzKrieg. 
-    TFCond_TmpDamageBonus = (1 << 12), //Unknown what this is for. Name taken from the AlliedModders SDK. 
-    TFCond_DeadRingered = (1 << 13), //Toggled when a player is taking reduced damage from the Deadringer. 
-    TFCond_Bonked = (1 << 14), //Toggled when a player is under the effects of The Bonk! Atomic Punch. 
-    TFCond_Stunned = (1 << 15), //Toggled when a player's speed is reduced from airblast or a Sandman ball. 
-    TFCond_Buffed = (1 << 16), //Toggled when a player is within range of an activated Buff Banner. 
-    TFCond_Charging = (1 << 17), //Toggled when a Demoman charges with the shield. 
-    TFCond_DemoBuff = (1 << 18), //Toggled when a Demoman has heads from the Eyelander. 
-    TFCond_CritCola = (1 << 19), //Toggled when the player is under the effect of The Crit-a-Cola. 
-    TFCond_InHealRadius = (1 << 20), //Unused condition, name taken from AlliedModders SDK. 
-    TFCond_Healing = (1 << 21), //Toggled when someone is being healed by a medic or a dispenser. 
-    TFCond_OnFire = (1 << 22), //Toggled when a player is on fire. 
-    TFCond_Overhealed = (1 << 23), //Toggled when a player has >100% health. 
-    TFCond_Jarated = (1 << 24), //Toggled when a player is hit with a Sniper's Jarate. 
-    TFCond_Bleeding = (1 << 25), //Toggled when a player is taking bleeding damage. 
-    TFCond_DefenseBuffed = (1 << 26), //Toggled when a player is within range of an activated Battalion's Backup. 
-    TFCond_Milked = (1 << 27), //Player was hit with a jar of Mad Milk. 
-    TFCond_MegaHeal = (1 << 28), //Player is under the effect of Quick-Fix charge. 
-    TFCond_RegenBuffed = (1 << 29), //Toggled when a player is within a Concheror's range. 
-    TFCond_MarkedForDeath = (1 << 30), //Player is marked for death by a Fan O'War hit. Effects are similar to TFCond_Jarated. 
-	TFCond_NoHealingDamageBuff = (1 << 31), //Unknown what this is used for.
-
-    TFCondEx_SpeedBuffAlly = (1 << 0), //Toggled when a player gets hit with the disciplinary action. 
-    TFCondEx_HalloweenCritCandy = (1 << 1), //Only for Scream Fortress event maps that drop crit candy. 
-	TFCondEx_CritCanteen = (1 << 2), //Player is getting a crit boost from a MVM canteen.
-	TFCondEx_CritDemoCharge = (1 << 3), //From demo's shield
-	TFCondEx_CritHype = (1 << 4), //Soda Popper crits. 
-    TFCondEx_CritOnFirstBlood = (1 << 5), //Arena first blood crit buff. 
-    TFCondEx_CritOnWin = (1 << 6), //End of round crits. 
-    TFCondEx_CritOnFlagCapture = (1 << 7), //CTF intelligence capture crits. 
-    TFCondEx_CritOnKill = (1 << 8), //Unknown what this is for. 
-    TFCondEx_RestrictToMelee = (1 << 9), //Unknown what this is for. 
-	TFCondEx_DefenseBuffNoCritBlock = ( 1 << 10 ), //MvM Buff.
-	TFCondEx_Reprogrammed = (1 << 11), //MvM Bot has been reprogrammed.
-    TFCondEx_PyroCrits = (1 << 12), //Player is getting crits from the Mmmph charge. 
-    TFCondEx_PyroHeal = (1 << 13), //Player is being healed from the Mmmph charge. 
-	TFCondEx_FocusBuff = (1 << 14), //Player is getting a focus buff.
-	TFCondEx_DisguisedRemoved = (1 << 15), //Disguised remove from a bot.
-	TFCondEx_MarkedForDeathSilent = (1 << 16), //Player is under the effects of the Escape Plan/Equalizer or GRU.
-	TFCondEx_DisguisedAsDispenser = (1 << 17), //Bot is disguised as dispenser.
-	TFCondEx_Sapped = (1 << 18), //MvM bot is being sapped.
-	TFCondEx_UberchargedHidden = (1 << 19), //MvM Related
-	TFCondEx_UberchargedCanteen = (1 << 20), //Player is receiving ?berCharge from a canteen.
-	TFCondEx_HalloweenBombHead = (1 << 21), //Player has a bomb on their head from Merasmus.
-	TFCondEx_HalloweenThriller = (1 << 22), //Players are forced to dance from Merasmus.
-	TFCondEx_BulletCharge = (1 << 26), //Player is receiving 75% reduced damage from bullets.
-	TFCondEx_ExplosiveCharge = (1 << 27), //Player is receiving 75% reduced damage from explosives.
-	TFCondEx_FireCharge = (1 << 28), //Player is receiving 75% reduced damage from fire.
-	TFCondEx_BulletResistance = (1 << 29), //Player is receiving 10% reduced damage from bullets.
-	TFCondEx_ExplosiveResistance = (1 << 30), //Player is receiving 10% reduced damage from explosives.
-	TFCondEx_FireResistance = (1 << 31), //Player is receiving 10% reduced damage from fire.
-
-	TFCondEx2_Stealthed = (1 << 0),
-	TFCondEx2_MedigunDebuff = (1 << 1),
-	TFCondEx2_StealthedUserBuffFade = (1 << 2),
-	TFCondEx2_BulletImmune = (1 << 3),
-	TFCondEx2_BlastImmune = (1 << 4),
-	TFCondEx2_FireImmune = (1 << 5),
-	TFCondEx2_PreventDeath = (1 << 6),
-	TFCondEx2_MVMBotRadiowave = (1 << 7),
-	TFCondEx2_HalloweenSpeedBoost = (1 << 8), //Wheel has granted player speed boost.
-	TFCondEx2_HalloweenQuickHeal = (1 << 9), //Wheel has granted player quick heal.
-	TFCondEx2_HalloweenGiant = (1 << 10), //Wheel has granted player giant mode.
-	TFCondEx2_HalloweenTiny = (1 << 11), //Wheel has granted player tiny mode.
-	TFCondEx2_HalloweenInHell = (1 << 12), //Wheel has granted player in hell mode.
-	TFCondEx2_HalloweenGhostMode = (1 << 13), //Wheel has granted player ghost mode.
-	TFCondEx2_Parachute = (1 << 16), //Player has deployed the BASE Jumper.
-	TFCondEx2_BlastJumping = (1 << 17), //Player has sticky or rocket jumped.
-
-    TFCond_MiniCrits = ( TFCond_Buffed | TFCond_CritCola ),
-    TFCond_IgnoreStates = ( TFCond_Ubercharged | TFCond_Bonked ), 
-    TFCondEx_IgnoreStates = ( TFCondEx_PyroHeal ) 
-};
-
-enum tf_classes
-{
-	TF2_Scout = 1,
-	TF2_Soldier = 3,
-	TF2_Pyro = 7,
-	TF2_Demoman = 4,
-	TF2_Heavy = 6,
-	TF2_Engineer = 9,
-	TF2_Medic = 5,
-	TF2_Sniper = 2,
-	TF2_Spy = 8,
-};
-
-enum source_lifestates
-{
-	LIFE_ALIVE,
-	LIFE_DYING,
-	LIFE_DEAD,
-	LIFE_RESPAWNABLE,
-	LIFE_DISCARDBODY,
-};
 
 class CInput
 {
@@ -937,4 +800,12 @@ CTraceFilterSkipEntity global_tracefilter;
 ITraceFilter *GLOBAL_TRACEFILTER_PTR = &global_tracefilter;
 extern "C" void CTraceFilterSkipEntity_SetHandle(CTraceFilterSkipEntity *_this, int handle) {
 	_this->skiphandle = handle;
+}
+
+void *REAL_PAINTTRAVERSE = NULL;
+void *IPANEL = NULL;
+
+extern "C" void IPanel_PaintTraverse(unsigned int unk1, bool unk2, bool unk3) {
+    typedef void ( __thiscall* OriginalFn )( PVOID, unsigned int, bool, bool );
+   ((OriginalFn)(REAL_PAINTTRAVERSE))(IPANEL, unk1, unk2, unk3);
 }
