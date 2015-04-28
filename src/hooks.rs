@@ -149,8 +149,11 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                 None => Some(target),
             }
         }) {
+        use std::num::Float;
+        if (t.pos - eyes).dot(&viewray) > 30.0.to_radians().cos() { 
 
-        ::aimbot::aim(t, &mut cmd);
+            ::aimbot::aim(t, &mut cmd);
+        }
     }
 
     if cmd.viewangles.pitch > 90.0 {

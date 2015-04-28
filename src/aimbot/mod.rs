@@ -4,9 +4,10 @@ use sdk;
 use sdk::Vector;
 pub use self::target::{Target, Targets};
 
+pub mod bone;
 mod target;
 
-pub fn targets() -> Targets {
+pub unsafe fn targets() -> Targets {
     Targets::new()
 }
 

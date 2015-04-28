@@ -45,6 +45,13 @@ extern "C" {
     pub fn CBaseEntity_GetRefEHandle(_this: *mut CBaseEntity) -> &libc::c_int;
     pub fn CBaseEntity_EstimateAbsVelocity(_this: *mut CBaseEntity, vel: &mut Vector);
 
+    pub fn CBaseEntity_SetupBones(_this: *mut CBaseEntity,
+                                  // array!
+                                  pBoneToWorldOut: *mut matrix3x4_t,
+                                  nMaxBones: libc::c_int,
+                                  boneMask: libc::c_int,
+                                  current_time: libc::c_float) -> bool;
+
     pub fn CEntList_GetClientEntity(_this: *mut CEntList, entnum: libc::c_int) -> *mut CBaseEntity;
     pub fn CEntList_GetHighestEntityIndex(_this: *const CEntList) -> libc::c_int;
 
@@ -369,3 +376,21 @@ pub struct CGlobalVarsBase {
     n_timestamp_randomize_window: libc::c_int,
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct matrix3x4_t(pub [[f32; 4]; 3]);
+
+impl matrix3x4_t {
+    pub fn transform_point(&self, vector: &Vector) -> Vector {
+        let mut outputs = [0.0; 3];
+        for i in 0..3 { 
+            outputs[i] = 
+                vector.x * self.0[i][0] +
+                vector.y * self.0[i][1] +
+                vector.z * self.0[i][2] +
+                1.0      * self.0[i][3];
+        }
+
+        Vector { x: outputs[0], y: outputs[1], z: outputs[2] }
+    }
+}

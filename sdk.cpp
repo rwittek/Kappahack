@@ -552,13 +552,13 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 		typedef DWORD* ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>( pRenderable, 9 )( pRenderable );
 	}
-	bool SetupBones( matrix3x4 *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime )
+    */
+	extern "C" bool CBaseEntity_SetupBones( CBaseEntity *_this, matrix3x4 *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime )
 	{
-		PVOID pRenderable = (PVOID)(this + 0x4);
+		PVOID pRenderable = (PVOID)(_this + 0x4);
 		typedef bool ( __thiscall* OriginalFn )( PVOID, matrix3x4*, int, int, float );
 		return getvfunc<OriginalFn>( pRenderable, 16 )( pRenderable, pBoneToWorldOut, nMaxBones, boneMask, currentTime );
 	}
-    */ 
 	extern "C" ClientClass* CBaseEntity_GetClientClass( CBaseEntity *_this )
 	{
 		PVOID pNetworkable = (PVOID)(_this + 0x8);
