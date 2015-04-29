@@ -15,7 +15,6 @@ winapi = "*"
 user32-sys = "*"
 kernel32-sys = "*"
 crc = "*"
-rust-crypto = "*"
 rand = "*"
 
 [build-dependencies]

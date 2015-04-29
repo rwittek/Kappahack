@@ -87,7 +87,7 @@ impl Targets {
             //sdk::CBaseEntity_Interpolate(ent, targtime); 
             if is_player {
                 let mut target = None;
-                for boneidx in 0..25 {
+                for boneidx in 0..22 {
                     let targpos = super::bone::get_bone_position(ent, boneidx);
                     if self.is_visible(me, ent, targpos) {
                         target = Some(Target { pos: targpos });

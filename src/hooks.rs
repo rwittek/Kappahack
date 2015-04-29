@@ -150,7 +150,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
             }
         }) {
         use std::num::Float;
-        if (t.pos - eyes).dot(&viewray) > 30.0.to_radians().cos() { 
+        if true || (t.pos - eyes).dot(&viewray) > 30.0.to_radians().cos() { 
 
             ::aimbot::aim(t, &mut cmd);
         }
