@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use INTERFACES;
 use OFFSETS;
 use offsets::ptr_offset;

@@ -17,6 +17,7 @@ pub use offsets::OFFSETS;
 mod autostrafe;
 mod aimbot;
 mod airblast;
+mod gameutils;
 mod gui;
 mod hooks;
 mod interfaces;
@@ -54,6 +55,7 @@ pub extern "stdcall" fn DllMain(
 
 fn setup() {
     unsafe {
+        /*
         let client = interfaces::get_module("client.dll");
         sdk::ESTIMATE_ABS_VELOCITY = utils::search_memory(client as *const (),
             0xFFFFFFFF,
@@ -64,6 +66,7 @@ fn setup() {
             true, true, true, true,
             true, true, true, true,
             ]).unwrap();
+            */
         INTERFACES.load();
         OFFSETS.load();
         hooks::install_client();

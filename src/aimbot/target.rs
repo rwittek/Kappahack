@@ -5,7 +5,7 @@ use libc;
 use sdk::{self, Ray_t, trace_t, Vector};
 use std::mem;
 
-const TRIGGER_MASK: libc::c_uint = 0x200400B; 
+const TRIGGER_MASK: libc::c_uint = 0x4200400B; 
 
 pub struct Target {
     pub pos: Vector
@@ -20,9 +20,9 @@ impl Targets {
     pub unsafe fn new() -> Targets {
         Targets {
             current_entnum: 0,
-            highest_entnum: unsafe {
+            highest_entnum: 
                 sdk::CEntList_GetHighestEntityIndex(INTERFACES.entlist) 
-            },
+        
         }
     }
 
@@ -62,7 +62,7 @@ impl Targets {
         let classname = CStr::from_ptr((*class).name); 
         let (targettable, is_player) = match classname.to_bytes() {
             b"CTFPlayer" => (true, true),
-            b"CObjectSentrygun" => (true, false),
+            b"CObjectSentrygun" | b"CTFTankBoss" => (true, false),
             _ => (false, false) 
         };
         if !targettable { 
@@ -83,12 +83,16 @@ impl Targets {
         };
 
         if !friendly && alive && condok {
-            let targtime = (*INTERFACES.globals).curtime;
+            //let targtime = (*INTERFACES.globals).curtime;
             //sdk::CBaseEntity_Interpolate(ent, targtime); 
             if is_player {
                 let mut target = None;
-                for boneidx in 0..22 {
-                    let targpos = super::bone::get_bone_position(ent, boneidx);
+                let bone_matrices = super::bone::get_all_bone_matrices(ent);
+                for targpos in bone_matrices
+                    .iter()
+                    .filter(|mat| !mat.is_zero())
+                    .map(|mat| mat.transform_point(&Vector::zero()))
+                         { 
                     if self.is_visible(me, ent, targpos) {
                         target = Some(Target { pos: targpos });
                         break;

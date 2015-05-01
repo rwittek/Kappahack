@@ -53,6 +53,7 @@ extern "C" {
                                   current_time: libc::c_float) -> bool;
 
     pub fn CEntList_GetClientEntity(_this: *mut CEntList, entnum: libc::c_int) -> *mut CBaseEntity;
+    pub fn CEntList_GetClientEntityFromHandle(_this: *mut CEntList, handle: libc::c_int) -> *mut CBaseEntity;
     pub fn CEntList_GetHighestEntityIndex(_this: *const CEntList) -> libc::c_int;
 
     pub fn CEngineTrace_TraceRay(_this: *mut CEngineTrace,
@@ -377,10 +378,13 @@ pub struct CGlobalVarsBase {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct matrix3x4_t(pub [[f32; 4]; 3]);
 
 impl matrix3x4_t {
+    pub fn is_zero(&self) -> bool {
+        *self == unsafe { ::std::mem::zeroed::<matrix3x4_t>() }
+    }
     pub fn transform_point(&self, vector: &Vector) -> Vector {
         let mut outputs = [0.0; 3];
         for i in 0..3 { 

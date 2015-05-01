@@ -34,8 +34,8 @@ impl Interfaces {
     pub unsafe fn load(&mut self) { 
         let client_factory = get_factory_from_dll("client.dll");
         let engine_factory = get_factory_from_dll("engine.dll");
-        let vguimatsurface_factory = get_factory_from_dll("vguimatsurface.dll");
-        let vgui_factory= get_factory_from_dll("vgui2.dll");
+        //let vguimatsurface_factory = get_factory_from_dll("vguimatsurface.dll");
+        //let vgui_factory= get_factory_from_dll("vgui2.dll");
 
         *self = Interfaces {
             engine: get_interface_from_factory("VEngineClient014", engine_factory) as *mut EngineClient,
@@ -43,8 +43,8 @@ impl Interfaces {
             trace: get_interface_from_factory("EngineTraceClient003", engine_factory) as *mut CEngineTrace,
             entlist: get_interface_from_factory("VClientEntityList003", client_factory) as *mut CEntList,
             debugoverlay: get_interface_from_factory("VDebugOverlay003", engine_factory) as *mut DebugOverlay,
-            surface: get_interface_from_factory("VGUI_Surface030", vguimatsurface_factory) as *mut ISurface,
-            panel: get_interface_from_factory("VGUI_Panel009", vgui_factory) as *mut IPanel,
+            surface: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Surface030", vguimatsurface_factory) as *mut ISurface,
+            panel: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Panel009", vgui_factory) as *mut IPanel,
             .. *self
         }
     }

@@ -1,7 +1,7 @@
 pub unsafe fn search_memory(start: *const (), len: usize, pattern: &[u8], must_match: &[bool]) -> Option<*const ()> {
 	// BE WARY OF INT OVERFLOW
     let start = start as usize;
-	let mut offset = 0us;
+	let mut offset = 0usize;
 	while offset + (pattern.len() as usize) < len {
         let mut pos = start + offset;
         let mut good = true;

@@ -8,6 +8,7 @@ use libc;
 use offsets::ptr_offset;
 use interfaces::CreateInterfaceFn;
 use vmthook;
+use std::ffi::CStr;
 
 pub unsafe fn install_client() {
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.client as *mut _);
@@ -21,11 +22,13 @@ pub unsafe fn install_client() {
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.input as *mut _);
     hooker.hook(8, mem::transmute::<_, *const ()>(hooked_getusercmd));
 
+    /*
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.panel as *mut _);
     REAL_PAINTTRAVERSE = hooker.get_orig_method(41);
     sdk::REAL_PAINTTRAVERSE = REAL_PAINTTRAVERSE;
     sdk::IPANEL = INTERFACES.panel as *const ();
     hooker.hook(41, mem::transmute::<_, *const ()>(hooked_painttraverse));
+    */
 }
 
 pub static mut REAL_CREATEMOVE: *const () = 0 as *const ();
@@ -69,12 +72,22 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
          :
          );
     let ebp = ebp as *mut *mut (); 
-    mem::transmute::<_, CreateMoveFn>(REAL_CREATEMOVE)(sequence_number,
-                    input_sample_frametime,
-                    active);
 
     let me_idx = sdk::EngineClient_GetLocalPlayer(INTERFACES.engine);
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
+
+    let wep = ::gameutils::get_active_weapon(me);
+    if !wep.is_null() {
+        let class = sdk::CBaseEntity_GetClientClass(wep);
+        let classname = CStr::from_ptr((*class).name); 
+        if classname.to_bytes() == b"CTFMinigun" {
+            *ptr_offset::<_, libc::c_int>(wep, OFFSETS.m_iState) = 0;
+        }
+    }
+
+    mem::transmute::<_, CreateMoveFn>(REAL_CREATEMOVE)(sequence_number,
+                    input_sample_frametime,
+                    active);
 
     // curtime is off in createmove, patch it up for now
     let old_curtime = (*INTERFACES.globals).curtime;
@@ -104,12 +117,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                 
             }
     let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
-    if flags & 1 == 0 {
-        cmd.buttons &= !(4);
-        //::autostrafe::autostrafe(&mut cmd);
-    }
-
-    if flags & 1 == 0 || flags & 2 != 0 { 
+    if flags & 1 == 0 { 
         cmd.buttons &= !(2);
     }
 
@@ -151,9 +159,10 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         }) {
         use std::num::Float;
         if true || (t.pos - eyes).dot(&viewray) > 30.0.to_radians().cos() { 
-
             ::aimbot::aim(t, &mut cmd);
         }
+    } else {
+        cmd.buttons &= !1;
     }
 
     if cmd.viewangles.pitch > 90.0 {
