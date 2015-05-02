@@ -83,12 +83,14 @@ impl Targets {
         };
 
         if !friendly && alive && condok {
-            //let targtime = (*INTERFACES.globals).curtime;
-            //sdk::CBaseEntity_Interpolate(ent, targtime); 
+            let targtime = (*INTERFACES.globals).curtime + (*INTERFACES.globals).interval_per_tick;
+            sdk::CBaseEntity_Interpolate(ent, targtime); 
             if is_player {
                 let bone_matrices = super::bone::get_all_bone_matrices(ent);
                 let modelptr = sdk::CBaseEntity_GetModel(ent);
+                if modelptr.is_null() { return None; }
                 let studiomdl = sdk::IVModelInfo_GetStudiomodel(INTERFACES.modelinfo, modelptr); 
+                if studiomdl.is_null() { return None; }
                 let hitboxsets = ::std::slice::from_raw_parts(
                     (studiomdl as usize + (*studiomdl).hitboxsetindex as usize) as *const sdk::mstudiohitboxset_t,
                     (*studiomdl).numhitboxsets as usize);
@@ -97,7 +99,7 @@ impl Targets {
                     (hitboxset as *const _ as usize + hitboxset.hitboxindex as usize) as *const sdk::mstudiobbox_t,
                     (*hitboxset).numhitboxes as usize);
 
-                for hitbox in hitboxes { 
+                for hitbox in hitboxes.iter().take(1) { 
                     let bone = hitbox.bone as usize;
                     let max = bone_matrices[bone].transform_point(&hitbox.bbmax);
                     let min = bone_matrices[bone].transform_point(&hitbox.bbmin);
