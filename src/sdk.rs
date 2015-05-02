@@ -27,6 +27,9 @@ pub enum ISurface {}
 
 pub enum IPanel {}
 
+pub enum IVModelInfo {}
+
+
 #[allow(dead_code)]
 extern "C" {
     pub static GLOBAL_TRACEFILTER_PTR: *mut ITraceFilter;
@@ -51,6 +54,7 @@ extern "C" {
                                   nMaxBones: libc::c_int,
                                   boneMask: libc::c_int,
                                   current_time: libc::c_float) -> bool;
+    pub fn CBaseEntity_GetModel(_this: *mut CBaseEntity) -> *mut model_t;
 
     pub fn CEntList_GetClientEntity(_this: *mut CEntList, entnum: libc::c_int) -> *mut CBaseEntity;
     pub fn CEntList_GetClientEntityFromHandle(_this: *mut CEntList, handle: libc::c_int) -> *mut CBaseEntity;
@@ -107,7 +111,10 @@ extern "C" {
     pub static mut REAL_PAINTTRAVERSE: *const ();
     pub static mut IPANEL: *const ();
     pub fn IPanel_PaintTraverse(unk1: libc::c_uint, unk2: bool, unk3: bool);
+
+    pub fn IVModelInfo_GetStudiomodel(_this: *mut IVModelInfo, model: *mut model_t) -> *mut studiohdr_t;
 }
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -382,9 +389,6 @@ pub struct CGlobalVarsBase {
 pub struct matrix3x4_t(pub [[f32; 4]; 3]);
 
 impl matrix3x4_t {
-    pub fn is_zero(&self) -> bool {
-        *self == unsafe { ::std::mem::zeroed::<matrix3x4_t>() }
-    }
     pub fn transform_point(&self, vector: &Vector) -> Vector {
         let mut outputs = [0.0; 3];
         for i in 0..3 { 
@@ -398,3 +402,51 @@ impl matrix3x4_t {
         Vector { x: outputs[0], y: outputs[1], z: outputs[2] }
     }
 }
+
+#[repr(C)]
+pub struct studiohdr_t {
+    pub id: libc::c_int,
+    pub version: libc::c_int,
+    pub checksum: libc::c_int,
+
+    pub name: [libc::c_char; 64],
+    pub length: libc::c_int,
+
+    pub eyeposition: Vector,
+    pub illumposition: Vector,
+    pub hull_min: Vector,
+    pub hull_max: Vector,
+    pub view_bbmin: Vector,
+    pub view_bbmax: Vector,
+    pub flags: libc::c_int,
+    pub numbones: libc::c_int,
+    pub boneindex: libc::c_int,
+    pub numbonecontrollers: libc::c_int,
+    pub bonecontrollerindex: libc::c_int,
+    pub numhitboxsets: libc::c_int,
+    pub hitboxsetindex: libc::c_int,
+}
+
+#[repr(C)]
+pub struct CStudioHdr {
+    pub m_pStudioHdr: *mut studiohdr_t
+}
+
+#[repr(C)]
+pub struct model_t;
+
+pub struct mstudiohitboxset_t {
+    pub sznameindex: libc::c_int,
+    pub numhitboxes: libc::c_int,
+    pub hitboxindex: libc::c_int
+}
+
+pub struct mstudiobbox_t {
+    pub bone: libc::c_int,
+    pub group: libc::c_int,
+    pub bbmin: Vector,
+    pub bbmax: Vector,
+    pub szhitboxnameindex: libc::c_int,
+    _unused: [libc::c_int; 8]
+}
+

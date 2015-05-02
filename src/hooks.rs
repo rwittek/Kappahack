@@ -166,7 +166,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     }
 
     if cmd.viewangles.pitch > 90.0 {
-        cmd.viewangles.pitch = cmd.viewangles.pitch - 360.0;
+        cmd.viewangles.pitch -= 360.0;
     }
     if cmd.viewangles.pitch > 90.0 {
         cmd.viewangles.pitch = 90.0;
@@ -191,6 +191,17 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     cmd.forwardmove = fwd * new_fwd.dot(&orig_fwd) + right * new_fwd.dot(&orig_right) + up * new_fwd.dot(&orig_up);
     cmd.sidemove = fwd * new_right.dot(&orig_fwd) + right * new_right.dot(&orig_right) + up * new_right.dot(&orig_up);
     cmd.upmove = fwd * new_up.dot(&orig_fwd) + right * new_up.dot(&orig_right) + up * new_up.dot(&orig_up);
+
+    if false && flags & (1<<1) != 0{
+
+        cmd.viewangles.roll = 270.0;
+        cmd.viewangles.pitch = 89.0;
+
+        let ay = (-cmd.sidemove).atan2(cmd.forwardmove).to_degrees();
+        cmd.viewangles.yaw = (((cmd.viewangles.yaw + ay) % 360.0 )- 180.0);
+        cmd.sidemove = -8.0 * (cmd.forwardmove.abs() + cmd.sidemove.abs());
+        cmd.forwardmove = 0.0;
+    }
 
     cmd.command_number = 2076615043;
     cmd.random_seed = 39;

@@ -545,14 +545,12 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 		vWorldSpaceCenter = CBaseEntity_GetAbsOrigin(_this);
 		vWorldSpaceCenter.z += (vMin.z + vMax.z) / 2;
 	}
-/*
-	DWORD* GetModel( )
+	extern "C" DWORD* CBaseEntity_GetModel(CBaseEntity *_this )
 	{
-		PVOID pRenderable = (PVOID)(this + 0x4);
+		PVOID pRenderable = (PVOID)(_this + 0x4);
 		typedef DWORD* ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>( pRenderable, 9 )( pRenderable );
 	}
-    */
 	extern "C" bool CBaseEntity_SetupBones( CBaseEntity *_this, matrix3x4 *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime )
 	{
 		PVOID pRenderable = (PVOID)(_this + 0x4);
@@ -755,6 +753,13 @@ class INetChannelInfo;
 		typedef float ( __thiscall* OriginalFn )( PVOID, int flow); 
 		return getvfunc<OriginalFn>( _this, 9 )( _this, flow); 
 	}
+
+class IVModelInfo;
+	extern "C" void * IVModelInfo_GetStudiomodel( IVModelInfo *_this, void *model) {
+		typedef void * ( __thiscall* OriginalFn )( PVOID, PVOID );
+		return getvfunc<OriginalFn>( _this, 28 )( _this, model ); 
+	}
+
 
 class CInput
 {

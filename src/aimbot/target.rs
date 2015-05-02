@@ -86,20 +86,27 @@ impl Targets {
             //let targtime = (*INTERFACES.globals).curtime;
             //sdk::CBaseEntity_Interpolate(ent, targtime); 
             if is_player {
-                let mut target = None;
                 let bone_matrices = super::bone::get_all_bone_matrices(ent);
-                for targpos in bone_matrices
-                    .iter()
-                    .filter(|mat| !mat.is_zero())
-                    .map(|mat| mat.transform_point(&Vector::zero()))
-                         { 
-                    if self.is_visible(me, ent, targpos) {
-                        target = Some(Target { pos: targpos });
-                        break;
+                let modelptr = sdk::CBaseEntity_GetModel(ent);
+                let studiomdl = sdk::IVModelInfo_GetStudiomodel(INTERFACES.modelinfo, modelptr); 
+                let hitboxsets = ::std::slice::from_raw_parts(
+                    (studiomdl as usize + (*studiomdl).hitboxsetindex as usize) as *const sdk::mstudiohitboxset_t,
+                    (*studiomdl).numhitboxsets as usize);
+                let hitboxset = &hitboxsets[0];
+                let hitboxes = ::std::slice::from_raw_parts(
+                    (hitboxset as *const _ as usize + hitboxset.hitboxindex as usize) as *const sdk::mstudiobbox_t,
+                    (*hitboxset).numhitboxes as usize);
+
+                for hitbox in hitboxes { 
+                    let bone = hitbox.bone as usize;
+                    let max = bone_matrices[bone].transform_point(&hitbox.bbmax);
+                    let min = bone_matrices[bone].transform_point(&hitbox.bbmin);
+                    let center = (max + min).scale(0.5);
+                    if self.is_visible(me, ent, center) {
+                        return Some(Target { pos: center });
                     }
                 }
-
-                target
+                None
             } else {
                 let mut targpos = Vector { x: 0., y: 0., z: 0. };
                 sdk::CBaseEntity_GetWorldSpaceCenter(ent, &mut targpos);

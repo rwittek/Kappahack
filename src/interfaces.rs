@@ -1,5 +1,5 @@
 use libc;
-use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase, ISurface, IPanel };
+use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase, ISurface, IPanel, IVModelInfo };
 use std;
 use winapi;
 use kernel32;
@@ -26,6 +26,7 @@ pub struct Interfaces {
     pub globals: *mut CGlobalVarsBase,
     pub surface: *mut ISurface, 
     pub panel: *mut IPanel, 
+    pub modelinfo: *mut IVModelInfo, 
 }
 unsafe impl Send for Interfaces {}
 unsafe impl Sync for Interfaces {}
@@ -45,6 +46,7 @@ impl Interfaces {
             debugoverlay: get_interface_from_factory("VDebugOverlay003", engine_factory) as *mut DebugOverlay,
             surface: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Surface030", vguimatsurface_factory) as *mut ISurface,
             panel: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Panel009", vgui_factory) as *mut IPanel,
+            modelinfo: get_interface_from_factory("VModelInfoClient006", engine_factory) as *mut IVModelInfo,
             .. *self
         }
     }
@@ -97,4 +99,5 @@ pub static mut INTERFACES: Interfaces = Interfaces {
     globals: 0 as *mut _,
     surface: 0 as *mut _,
     panel: 0 as *mut _,
+    modelinfo: 0 as *mut _,
 };
