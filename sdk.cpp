@@ -516,6 +516,11 @@ EstimateAbsVelocityFn ESTIMATE_ABS_VELOCITY = NULL;
 		typedef Vector& ( __thiscall* OriginalFn )( PVOID );
 		return getvfunc<OriginalFn>(_this, 10)(_this);
 	}
+	extern "C" void CBaseEntity_ResetLatched( CBaseEntity *_this )
+	{
+		typedef void ( __thiscall* OriginalFn )( PVOID);
+		return getvfunc<OriginalFn>(_this, 0x180 / 4)(_this);
+	}
 	extern "C" void CBaseEntity_Interpolate( CBaseEntity *_this, float currentTime)
 	{
 		typedef void ( __thiscall* OriginalFn )( PVOID, float );
@@ -814,3 +819,20 @@ extern "C" void IPanel_PaintTraverse(unsigned int unk1, bool unk2, bool unk3) {
     typedef void ( __thiscall* OriginalFn )( PVOID, unsigned int, bool, bool );
    ((OriginalFn)(REAL_PAINTTRAVERSE))(IPANEL, unk1, unk2, unk3);
 }
+
+class IMoveHelper;
+class IPrediction;
+	extern "C" void IPrediction_RunCommand( IPrediction *_this, CBaseEntity *player, CUserCmd *cmd, IMoveHelper *movehelper) { 
+		typedef void ( __thiscall* OriginalFn )( PVOID, CBaseEntity *, CUserCmd *, IMoveHelper *); 
+		return getvfunc<OriginalFn>( _this, 17 )( _this, player, cmd, movehelper ); 
+	}
+
+void *MOVEHELPER = NULL;
+void (__fastcall *REAL_RUNCOMMAND)(IPrediction *pred, int ignoreme, CBaseEntity *player, CUserCmd *ucmd, IMoveHelper *helper) = NULL;
+void __fastcall hooked_runcommand(IPrediction *pred, int ignoreme, CBaseEntity *player, CUserCmd *ucmd, IMoveHelper *helper) {
+	MOVEHELPER = helper;
+	if (REAL_RUNCOMMAND) {
+		REAL_RUNCOMMAND(pred, ignoreme, player, ucmd, helper);
+	}
+}
+void (__fastcall *HOOKED_RUNCOMMAND)(IPrediction *pred, int ignoreme, CBaseEntity *player, CUserCmd *ucmd, IMoveHelper *helper) = hooked_runcommand;

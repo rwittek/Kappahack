@@ -10,7 +10,11 @@ pub struct Offsets {
     pub m_nPlayerCond: isize,
     pub m_nPlayerCondEx: isize,
     pub m_hActiveWeapon: isize,
+    pub m_vecPunchAngle: isize,
     pub m_iState: isize,
+    pub m_flNextPrimaryAttack: isize,
+    pub m_flSimulationTime: isize,
+    pub m_flAnimTime: isize,
 }
 unsafe impl Sync for Offsets {}
 unsafe impl Send for Offsets {} 
@@ -37,5 +41,9 @@ pub static mut OFFSETS: Offsets = Offsets {
     m_nPlayerCond: 0x17E0 + 0x5B0,
     m_nPlayerCondEx: 0x5B4,
     m_hActiveWeapon: 0x0DB0,
-    m_iState: 0xBB0
+    m_iState: 0xBB0,
+    m_vecPunchAngle: 0x0E14 + 0x6C,
+    m_flNextPrimaryAttack: 0x09FC,
+    m_flSimulationTime: 0x6C,
+    m_flAnimTime: 0x64,
 };

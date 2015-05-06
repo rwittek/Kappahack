@@ -22,6 +22,7 @@ mod gui;
 mod hooks;
 mod interfaces;
 mod offsets;
+mod predict;
 mod sdk;
 #[allow(dead_code)]
 mod triggerbot;

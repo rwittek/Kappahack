@@ -29,6 +29,9 @@ pub enum IPanel {}
 
 pub enum IVModelInfo {}
 
+pub enum IPrediction {}
+pub enum IMoveHelper {}
+
 
 #[allow(dead_code)]
 extern "C" {
@@ -43,6 +46,7 @@ extern "C" {
     pub fn CBaseEntity_GetClientClass(_this: *mut CBaseEntity) -> *const ClientClass;
     pub fn CBaseEntity_UpdateGlowEffect(_this: *mut CBaseEntity);
     pub fn CBaseEntity_Interpolate(_this: *mut CBaseEntity, currentTime: f32);
+    pub fn CBaseEntity_ResetLatched(_this: *mut CBaseEntity);
 
     pub fn CBaseEntity_GetIndex(_this: *mut CBaseEntity) -> libc::c_int;
     pub fn CBaseEntity_GetRefEHandle(_this: *mut CBaseEntity) -> &libc::c_int;
@@ -112,7 +116,13 @@ extern "C" {
     pub static mut IPANEL: *const ();
     pub fn IPanel_PaintTraverse(unk1: libc::c_uint, unk2: bool, unk3: bool);
 
+    pub static mut REAL_RUNCOMMAND: *const ();
+    pub static mut HOOKED_RUNCOMMAND: *const ();
+    pub static mut MOVEHELPER: *mut IMoveHelper;
+
     pub fn IVModelInfo_GetStudiomodel(_this: *mut IVModelInfo, model: *mut model_t) -> *mut studiohdr_t;
+
+    pub fn IPrediction_RunCommand(_this: *mut IPrediction, player: *mut CBaseEntity, cmd: *const CUserCmd, movehelper: *mut IMoveHelper);
 }
 
 

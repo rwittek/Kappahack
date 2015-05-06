@@ -1,5 +1,10 @@
 use libc;
-use sdk::{CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay, EngineClient, CGlobalVarsBase, ISurface, IPanel, IVModelInfo };
+use sdk::{
+    CEngineTrace, CEntList, CHLClient, CInput, DebugOverlay,
+    EngineClient, CGlobalVarsBase, ISurface, IPanel, IVModelInfo,
+    IPrediction,
+    IMoveHelper,
+};
 use std;
 use winapi;
 use kernel32;
@@ -27,6 +32,8 @@ pub struct Interfaces {
     pub surface: *mut ISurface, 
     pub panel: *mut IPanel, 
     pub modelinfo: *mut IVModelInfo, 
+    pub prediction: *mut IPrediction, 
+    pub movehelper: *mut IMoveHelper, 
 }
 unsafe impl Send for Interfaces {}
 unsafe impl Sync for Interfaces {}
@@ -47,6 +54,7 @@ impl Interfaces {
             surface: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Surface030", vguimatsurface_factory) as *mut ISurface,
             panel: std::ptr::null_mut(), //get_interface_from_factory("VGUI_Panel009", vgui_factory) as *mut IPanel,
             modelinfo: get_interface_from_factory("VModelInfoClient006", engine_factory) as *mut IVModelInfo,
+            prediction: get_interface_from_factory("VClientPrediction001", client_factory) as *mut IPrediction,
             .. *self
         }
     }
@@ -100,4 +108,6 @@ pub static mut INTERFACES: Interfaces = Interfaces {
     surface: 0 as *mut _,
     panel: 0 as *mut _,
     modelinfo: 0 as *mut _,
+    prediction: 0 as *mut _,
+    movehelper: 0 as *mut _,
 };

@@ -83,10 +83,16 @@ impl Targets {
         };
 
         if !friendly && alive && condok {
-            let targtime = (*INTERFACES.globals).curtime + (*INTERFACES.globals).interval_per_tick;
-            sdk::CBaseEntity_Interpolate(ent, targtime); 
+            let targtime = (*INTERFACES.globals).tickcount as f32 * (*INTERFACES.globals).interval_per_tick;
+            let oldsimtime = *ptr_offset::<_, f32>(ent, OFFSETS.m_flSimulationTime);
+            let oldanimtime = *ptr_offset::<_, f32>(ent, OFFSETS.m_flAnimTime);
+
             if is_player {
-                let bone_matrices = super::bone::get_all_bone_matrices(ent);
+                *ptr_offset::<_, f32>(ent, OFFSETS.m_flSimulationTime) = targtime;
+                *ptr_offset::<_, f32>(ent, OFFSETS.m_flAnimTime) = targtime;
+                let bone_matrices = super::bone::get_all_bone_matrices(ent, targtime);
+                *ptr_offset::<_, f32>(ent, OFFSETS.m_flSimulationTime) = oldsimtime;
+                *ptr_offset::<_, f32>(ent, OFFSETS.m_flAnimTime) = oldanimtime;
                 let modelptr = sdk::CBaseEntity_GetModel(ent);
                 if modelptr.is_null() { return None; }
                 let studiomdl = sdk::IVModelInfo_GetStudiomodel(INTERFACES.modelinfo, modelptr); 
@@ -99,7 +105,7 @@ impl Targets {
                     (hitboxset as *const _ as usize + hitboxset.hitboxindex as usize) as *const sdk::mstudiobbox_t,
                     (*hitboxset).numhitboxes as usize);
 
-                for hitbox in hitboxes.iter().take(1) { 
+                for hitbox in hitboxes.iter() {
                     let bone = hitbox.bone as usize;
                     let max = bone_matrices[bone].transform_point(&hitbox.bbmax);
                     let min = bone_matrices[bone].transform_point(&hitbox.bbmin);
@@ -135,6 +141,6 @@ impl Targets {
                                        TRIGGER_MASK,
                                        sdk::GLOBAL_TRACEFILTER_PTR,
                                        &mut tr);
-            tr.ent == ent || tr.fraction > 0.97 
+            tr.ent == ent || tr.fraction > 0.985
     }
 }

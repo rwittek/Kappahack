@@ -22,6 +22,10 @@ pub unsafe fn install_client() {
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.input as *mut _);
     hooker.hook(8, mem::transmute::<_, *const ()>(hooked_getusercmd));
 
+    let mut hooker = vmthook::VMTHooker::new(INTERFACES.prediction as *mut _);
+    sdk::REAL_RUNCOMMAND = hooker.get_orig_method(17);
+    hooker.hook(17, mem::transmute::<_, *const ()>(sdk::HOOKED_RUNCOMMAND));
+
     /*
     let mut hooker = vmthook::VMTHooker::new(INTERFACES.panel as *mut _);
     REAL_PAINTTRAVERSE = hooker.get_orig_method(41);
@@ -77,27 +81,59 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let me = sdk::CEntList_GetClientEntity(INTERFACES.entlist, me_idx);
 
     let wep = ::gameutils::get_active_weapon(me);
-    if !wep.is_null() {
+    let wepname = if !wep.is_null() {
         let class = sdk::CBaseEntity_GetClientClass(wep);
         let classname = CStr::from_ptr((*class).name); 
-        if classname.to_bytes() == b"CTFMinigun" {
-            *ptr_offset::<_, libc::c_int>(wep, OFFSETS.m_iState) = 0;
-        }
+        Some(classname)
+    } else {
+        None
+    };
+    if wepname.map(|w| w.to_bytes()) == Some(b"CTFMinigun") {
+        *ptr_offset::<_, libc::c_int>(wep, OFFSETS.m_iState) = 0;
     }
 
     mem::transmute::<_, CreateMoveFn>(REAL_CREATEMOVE)(sequence_number,
                     input_sample_frametime,
                     active);
 
-    // curtime is off in createmove, patch it up for now
-    let old_curtime = (*INTERFACES.globals).curtime;
-    //(*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * (*ptr_offset::<_, libc::c_uint>(me, OFFSETS.m_nTickBase) as f32);
 
     let sendpacket_ptr = ptr_offset::<_, bool>(*ebp, -1);
     let cmds = *((INTERFACES.input as usize + 0xC4) as *const *mut sdk::CUserCmd);
     let cmd_ptr = cmds.offset((sequence_number % 90) as isize);
     let mut cmd = *cmd_ptr;
     let orig_angles = cmd.viewangles;
+
+    // curtime is off in createmove, patch it up for now
+    let old_curtime = (*INTERFACES.globals).curtime;
+    let old_tickcount = (*INTERFACES.globals).tickcount;
+    (*INTERFACES.globals).tickcount = cmd.tick_count;
+    //(*INTERFACES.globals).curtime += (*INTERFACES.globals).frametime; 
+    let (dosilent, shotmatters) = if !wep.is_null() {
+        if wepname.map(|w| w.to_bytes()) == Some(b"CTFMinigun") {
+            (false, true)
+        } else {
+            let ticks = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_nTickBase) as f32;
+            let fixtime = ticks * (*INTERFACES.globals).interval_per_tick; 
+            let next_attack = *ptr_offset::<_, libc::c_float>(wep, OFFSETS.m_flNextPrimaryAttack);
+            (true, next_attack <= fixtime)
+        }
+    } else {
+        (false, false)
+    };
+
+    /*if flags & (1<<1) != 0 && ( !shotmatters || cmd.buttons & 1 == 0 ) { 
+
+        cmd.viewangles.roll = -90.0;
+        cmd.viewangles.pitch = 89.0;
+
+        let ay = (-cmd.sidemove).atan2(cmd.forwardmove).to_degrees();
+        cmd.viewangles.yaw = (((cmd.viewangles.yaw + ay) % 360.0 )- 180.0);
+        cmd.sidemove = -8.0 * (cmd.forwardmove.abs() + cmd.sidemove.abs());
+        cmd.forwardmove = 0.0;
+    }*/
+
+    ::predict::predict_local_command(me, &cmd);
+    let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
 
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me);
@@ -116,7 +152,6 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
                 sdk::CBaseEntity_UpdateGlowEffect(ent);
                 
             }
-    let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
     if flags & 1 == 0 { 
         cmd.buttons &= !(2);
     }
@@ -125,44 +160,45 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     FLIP = !FLIP;
     
     static mut ANG_ACCUM: f32 = 0.0;
-    if false && cmd.buttons & 1 == 0 {
+    if false && (!shotmatters || cmd.buttons & 1 == 0) {
         use std::f32::consts::PI;
         ANG_ACCUM = (ANG_ACCUM + (1.0 / 7.0 * PI)) % (2.0 * PI); 
         let newang = ANG_ACCUM;
 
         cmd.viewangles.yaw = newang.to_degrees(); 
-        cmd.viewangles.pitch = if FLIP {
-            89.0
-        } else {
-            -89.0
-        };
+        cmd.viewangles.pitch = (newang % 178.0) - 89.0; 
     }
 
     /*if let Some(t) = ::airblast::Targets::new().next() {
-        ::aimbot::aim(t, &mut cmd);
-        cmd.buttons |= 1<<11;
-    }*/
+      ::aimbot::aim(t, &mut cmd);
+      cmd.buttons |= 1<<11;
+      }*/
 
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let viewray = cmd.viewangles.to_vector(); 
 
-
-    if let Some(t) = ::aimbot::targets().fold(
-        None,
-        |acc, target| {
-            match acc {
-                Some(ref best) if (target.pos - eyes).normalize().dot(&viewray) > (best.pos - eyes).normalize().dot(&viewray) => Some(target),
-                Some(best) => Some(best),
-                None => Some(target),
+    if cmd.buttons & 1 != 0 && shotmatters {
+        if let Some(t) = ::aimbot::targets().fold(
+            None,
+            |acc, target| {
+                match acc {
+                    Some(ref best) if (target.pos - eyes).normalize().dot(&viewray) > (best.pos - eyes).normalize().dot(&viewray) => Some(target),
+                    Some(best) => Some(best),
+                    None => Some(target),
+                }
+            }) {
+            use std::num::Float;
+            if true || (t.pos - eyes).normalize().dot(&viewray) > 8.0.to_radians().cos() { 
+                ::aimbot::aim(t, &mut cmd);
+                cmd.viewangles.pitch -= (*ptr_offset::<_, sdk::QAngle>(me, OFFSETS.m_vecPunchAngle)).pitch;
+                if dosilent {
+                    *sendpacket_ptr = false;
+                }
             }
-        }) {
-        use std::num::Float;
-        if true || (t.pos - eyes).dot(&viewray) > 30.0.to_radians().cos() { 
-            ::aimbot::aim(t, &mut cmd);
+        } else {
+            cmd.buttons &= !1;
         }
-    } else {
-        cmd.buttons &= !1;
     }
 
     if cmd.viewangles.pitch > 90.0 {
@@ -192,17 +228,6 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     cmd.sidemove = fwd * new_right.dot(&orig_fwd) + right * new_right.dot(&orig_right) + up * new_right.dot(&orig_up);
     cmd.upmove = fwd * new_up.dot(&orig_fwd) + right * new_up.dot(&orig_right) + up * new_up.dot(&orig_up);
 
-    if false && flags & (1<<1) != 0{
-
-        cmd.viewangles.roll = 270.0;
-        cmd.viewangles.pitch = 89.0;
-
-        let ay = (-cmd.sidemove).atan2(cmd.forwardmove).to_degrees();
-        cmd.viewangles.yaw = (((cmd.viewangles.yaw + ay) % 360.0 )- 180.0);
-        cmd.sidemove = -8.0 * (cmd.forwardmove.abs() + cmd.sidemove.abs());
-        cmd.forwardmove = 0.0;
-    }
-
     cmd.command_number = 2076615043;
     cmd.random_seed = 39;
 
@@ -213,6 +238,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     verify_usercmd(verified_cmd);
 
     (*INTERFACES.globals).curtime = old_curtime;
+    (*INTERFACES.globals).tickcount = old_tickcount;
 }
 
 
