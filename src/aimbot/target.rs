@@ -83,7 +83,7 @@ impl Targets {
         };
 
         if !friendly && alive && condok {
-            let targtime = (*INTERFACES.globals).tickcount as f32 * (*INTERFACES.globals).interval_per_tick;
+            let targtime = ((*INTERFACES.globals).interval_per_tick * ((*INTERFACES.globals).tickcount as f32));
             let oldsimtime = *ptr_offset::<_, f32>(ent, OFFSETS.m_flSimulationTime);
             let oldanimtime = *ptr_offset::<_, f32>(ent, OFFSETS.m_flAnimTime);
 
@@ -105,7 +105,7 @@ impl Targets {
                     (hitboxset as *const _ as usize + hitboxset.hitboxindex as usize) as *const sdk::mstudiobbox_t,
                     (*hitboxset).numhitboxes as usize);
 
-                for hitbox in hitboxes.iter() {
+                for hitbox in hitboxes.iter().take(1) {
                     let bone = hitbox.bone as usize;
                     let max = bone_matrices[bone].transform_point(&hitbox.bbmax);
                     let min = bone_matrices[bone].transform_point(&hitbox.bbmin);

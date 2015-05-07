@@ -107,7 +107,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     let old_curtime = (*INTERFACES.globals).curtime;
     let old_tickcount = (*INTERFACES.globals).tickcount;
     (*INTERFACES.globals).tickcount = cmd.tick_count;
-    //(*INTERFACES.globals).curtime += (*INTERFACES.globals).frametime; 
+    //(*INTERFACES.globals).curtime = (*INTERFACES.globals).interval_per_tick * cmd.tick_count as f32; 
     let (dosilent, shotmatters) = if !wep.is_null() {
         if wepname.map(|w| w.to_bytes()) == Some(b"CTFMinigun") {
             (false, true)
@@ -121,6 +121,9 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         (false, false)
     };
 
+    let canreflect = wepname.map(|w| w.to_bytes()) == Some(b"CTFFlamethrower"); 
+
+    let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
     /*if flags & (1<<1) != 0 && ( !shotmatters || cmd.buttons & 1 == 0 ) { 
 
         cmd.viewangles.roll = -90.0;
@@ -133,7 +136,6 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
     }*/
 
     ::predict::predict_local_command(me, &cmd);
-    let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
 
     let myteam = *ptr_offset::<_, libc::c_int>(me, OFFSETS.m_iTeamNum);
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me);
@@ -169,16 +171,17 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         cmd.viewangles.pitch = (newang % 178.0) - 89.0; 
     }
 
-    /*if let Some(t) = ::airblast::Targets::new().next() {
-      ::aimbot::aim(t, &mut cmd);
-      cmd.buttons |= 1<<11;
-      }*/
 
     let meorigin = sdk::CBaseEntity_GetAbsOrigin(me).clone();
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let viewray = cmd.viewangles.to_vector(); 
 
-    if cmd.buttons & 1 != 0 && shotmatters {
+    if canreflect {
+        if let Some(t) = ::airblast::Targets::new().next() {
+            ::aimbot::aim(t, &mut cmd);
+            cmd.buttons |= 1<<11;
+        }
+    } else if cmd.buttons & 1 != 0 && shotmatters {
         if let Some(t) = ::aimbot::targets().fold(
             None,
             |acc, target| {
