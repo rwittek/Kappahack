@@ -6,11 +6,9 @@ pub unsafe fn search_memory(start: *const (), len: usize, pattern: &[u8], must_m
         let mut pos = start + offset;
         let mut good = true;
         for (&byte, &must_match_byte) in pattern.iter().zip(must_match.iter()) {
-            if byte != *(pos as *const u8) {
-                if must_match_byte {
-                    good = false;
-                    break;
-                }
+            if must_match_byte && byte != *(pos as *const u8) {
+                good = false;
+                break;
             }
             pos += 1;
         }

@@ -81,7 +81,7 @@ unsafe fn get_target(entnum: libc::c_int) -> Option<Target> {
     let eyes = meorigin + *ptr_offset::<_, Vector>(me, OFFSETS.m_vecViewOffset);
     let netchan = sdk::EngineClient_GetNetChannelInfo(INTERFACES.engine);
     let latency = sdk::INetChannelInfo_GetLatency(netchan, 0) + sdk::INetChannelInfo_GetLatency(netchan, 1);
-    let mut vel = Vector { x: 0.0, y: 0.0, z: 10000.0 };
+    let mut vel = Vector { x: 0.0, y: 0.0, z: 0.0 };
     sdk::CBaseEntity_EstimateAbsVelocity(ent, &mut vel);
     let targpos = origin + (vel.scale(latency));
 
