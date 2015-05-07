@@ -121,7 +121,7 @@ unsafe extern "stdcall" fn hooked_createmove(sequence_number: libc::c_int,
         (false, false)
     };
 
-    let canreflect = wepname.map(|w| w.to_bytes()) == Some(b"CTFFlamethrower"); 
+    let canreflect = wepname.map(|w| w.to_bytes()) == Some(b"CTFFlameThrower"); 
 
     let flags = *ptr_offset::<_, i32>(me, OFFSETS.m_fFlags);
     /*if flags & (1<<1) != 0 && ( !shotmatters || cmd.buttons & 1 == 0 ) { 
